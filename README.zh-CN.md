@@ -38,6 +38,8 @@ OpenClaw 外置插件：从 [Wei-Shaw/sub2api](https://github.com/Wei-Shaw/sub2a
 
 **分叉**：本插件 provider 默认是 `openai-responses`；OpenClaw 在没有 `api` 时默认 `openai-completions`。目录必须写出 `api`，否则未知 ID 会掉回宿主 completions。钉 **OpenClaw 2026.9.3**。
 
+实测摘要（OpenClaw 2026.9.3）：P1/P2/P3a **live 待验**（目录无对应 ID）；P5-messages 受宿主 `/v1` 双前缀影响（可能 `/v1/v1/messages` → 404）。详见 [docs/PROTOCOL.md](docs/PROTOCOL.md)。
+
 覆盖示例：
 
 ```json5

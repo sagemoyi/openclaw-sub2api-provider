@@ -1,8 +1,8 @@
 # Compatibility — openclaw-sub2api-provider
 
 > 维护：礼部。相对 CPA 差异、bundled metadata 去留、已知限制。  
-> **状态：刑部已通过 A–H 脱敏（2026-09-17）。按模型选协议：分叉已起草，映射表候兵部实现后定稿。钉 OpenClaw 2026.9.3。**  
-> 依据：兵部本地矩阵 `BINGBU-matrix-AH.md`（隔离工作区，不入库）。  
+> **状态：按模型选协议文档已定稿（2026-09-17）。** A–H 脱敏曾过刑部；本段定稿后请刑部复审再 push。钉 OpenClaw 2026.9.3。  
+> 依据：兵部 A–H 矩阵与协议矩阵（隔离工作区，不入库）。实现：`bingbu/per-model-api`。  
 > 真实基址与密钥一律占位，禁止入文。
 
 占位符：
@@ -28,11 +28,11 @@
 实测环境：OpenClaw `2026.9.3` · Node `v24.19.0` · 隔离前缀 `oc-sub2api-2026.9.3`。
 
 
-## 1a. 按模型选择协议（钉 OpenClaw 2026.9.3）
+## 1a. 按模型选择协议（钉 OpenClaw 2026.9.3）— 已定稿
 
 全文：[PROTOCOL.md](./PROTOCOL.md)。
 
-**分叉（必须）**：本插件 provider 默认 `openai-responses`；OpenClaw 在目录行也没有 `api` 时默认 `openai-completions`。目录发布 / `resolveDynamicModel` / `prepareDynamicModel` 须同一推断写 `api`，否则未知 ID 会掉回宿主 completions。
+**分叉（必须）**：本插件 provider 默认 `openai-responses`；OpenClaw 在目录行也没有 `api` 时默认 `openai-completions`。写入点共用 `inferNativeApiForModelId`（`catalog.run` / `mergeExplicit` / `inferredUnknownModel`），否则未知 ID 会掉回宿主 completions。
 
 | 线索 | `api` |
 | --- | --- |
@@ -41,7 +41,9 @@
 | `gemini` 等稳定线索 | `openai-completions` |
 | 未知 ID | provider 默认 `openai-responses`（**非官方穷尽表**） |
 
-显式 `models[].api` 优先，推断不覆盖。三协议：`openai-completions` → `/v1/chat/completions`；`openai-responses` → `/v1/responses`；`anthropic-messages` → `/v1/messages`。
+显式 `models[].api` 优先。第一版无前缀覆盖表。
+
+Live（目录 7 条，全为 `openai-responses`，无 claude / gpt-family / gemini）：P3/P4/P5-responses/P5-completions/P6 **PASS**；**P1/P2/P3a live 待验**；**P5-messages FAIL-UPSTREAM**（`baseUrl` 含 `/v1` 时宿主可能请求 `/v1/v1/messages` → 404）。插件只写 `api`，不改宿主 URL。
 
 ## 1. 相对 CPA 的差异（实测）
 

@@ -38,6 +38,8 @@ Inference (case-insensitive; explicit `models[].api` wins): `claude` → message
 
 **Fork:** this provider defaults to `openai-responses`; OpenClaw defaults to `openai-completions` when a model has no `api`. Catalog rows must carry `api` or unknown IDs fall through to the host default. Locked to **OpenClaw 2026.9.3**.
 
+Measured (OpenClaw 2026.9.3): P1/P2/P3a **live pending** (no matching IDs in catalog); P5-messages is affected by the host `/v1` double prefix (may request `/v1/v1/messages` → 404). See [docs/PROTOCOL.md](docs/PROTOCOL.md).
+
 Override:
 
 ```json5
