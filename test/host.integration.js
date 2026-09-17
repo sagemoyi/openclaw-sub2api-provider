@@ -23,14 +23,14 @@ test("real SDK fetch + streaming transport honor string efforts, adaptive, non-r
     if (req.url.startsWith("/v1/models")) {
       const rich = req.url.includes("?");
       res.end(JSON.stringify(rich ? { models: [
-        { id: "proxy-test", context_window: 64000, max_tokens: 2048, supported_reasoning_levels: efforts },
-      ] } : { data: [{ id: "proxy-test" }] })); return;
+        { id: "gemini-proxy-test", context_window: 64000, max_tokens: 2048, supported_reasoning_levels: efforts },
+      ] } : { data: [{ id: "gemini-proxy-test" }] })); return;
     }
     let body = ""; for await (const chunk of req) body += chunk;
     requests.push(JSON.parse(body));
     res.setHeader("Content-Type", "text/event-stream");
-    res.write(`data: ${JSON.stringify({ id: "chat-test", object: "chat.completion.chunk", created: 1, model: "proxy-test", choices: [{ index: 0, delta: { role: "assistant", content: "OK" }, finish_reason: null }] })}\n\n`);
-    res.write(`data: ${JSON.stringify({ id: "chat-test", object: "chat.completion.chunk", created: 1, model: "proxy-test", choices: [{ index: 0, delta: {}, finish_reason: "stop" }], usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } })}\n\n`);
+    res.write(`data: ${JSON.stringify({ id: "chat-test", object: "chat.completion.chunk", created: 1, model: "gemini-proxy-test", choices: [{ index: 0, delta: { role: "assistant", content: "OK" }, finish_reason: null }] })}\n\n`);
+    res.write(`data: ${JSON.stringify({ id: "chat-test", object: "chat.completion.chunk", created: 1, model: "gemini-proxy-test", choices: [{ index: 0, delta: {}, finish_reason: "stop" }], usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } })}\n\n`);
     res.end("data: [DONE]\n\n");
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -38,7 +38,7 @@ test("real SDK fetch + streaming transport honor string efforts, adaptive, non-r
   const baseUrl = `http://127.0.0.1:${server.address().port}/v1`;
   const config = { models: { providers: { "sub2api-provider": { baseUrl, models: [] } } } };
   const cpa = createSub2apiProvider({ config, fetchRows: fetchLiveProviderModelRows, resolveAuth: async () => ({ apiKey: "test-key" }) });
-  const ctx = { config, modelId: "proxy-test" };
+  const ctx = { config, modelId: "gemini-proxy-test" };
   await cpa.provider.catalog.run(ctx);
   const model = cpa.provider.resolveDynamicModel(ctx);
   assert.equal(model.maxTokens, 2048);

@@ -12,6 +12,26 @@ const record = (x) => x !== null && typeof x === "object" && !Array.isArray(x);
 const strings = (x) => Array.isArray(x) ? [...new Set(x.filter((s) => typeof s === "string").map((s) => s.trim().toLowerCase()).filter(Boolean))] : [];
 const idOf = (row, key) => record(row) && typeof row[key] === "string" && row[key].trim() && !/[\x00-\x1f\x7f]/.test(row[key]) ? row[key].trim() : undefined;
 
+export const PROVIDER_DEFAULT_API = "openai-responses";
+
+/**
+ * Infer OpenClaw native `api` for a model id.
+ * Order: explicitApi (never overwritten) → id substring inference → providerDefault.
+ * First version skips optional prefix-override tables.
+ */
+export function inferNativeApiForModelId(id, { explicitApi, providerDefault = PROVIDER_DEFAULT_API } = {}) {
+  if (typeof explicitApi === "string" && explicitApi.trim()) return explicitApi.trim();
+  const lower = String(id ?? "").toLowerCase();
+  if (lower.includes("claude")) return "anthropic-messages";
+  if (lower.includes("gpt") || lower.includes("chatgpt") || lower.includes("codex")
+      || lower.includes("o1") || lower.includes("o3") || lower.includes("o4")) {
+    return "openai-responses";
+  }
+  if (lower.includes("gemini")) return "openai-completions";
+  if (typeof providerDefault === "string" && providerDefault.trim()) return providerDefault.trim();
+  return PROVIDER_DEFAULT_API;
+}
+
 export function normalizeBaseUrl(value) {
   if (typeof value !== "string" || !value.trim()) throw new Error("Set models.providers.sub2api-provider.baseUrl to your sub2api endpoint");
   let url;
@@ -94,8 +114,8 @@ export function projectModel(basic, rich, { useBundledMetadata = false } = {}) {
   if (!positive(rich?.context_window) && !native?.contextWindow) warnings.push("Context limit unknown; conservative 32768-token fallback");
   const input = strings(rich?.input_modalities ?? native?.input).filter((x) => ["text", "image"].includes(x));
   if (!input.includes("text")) input.unshift("text");
-  // The ordinary list carries ownership; CPA's rich projection omits it. Aliases remain literal.
-  const api = native?.type === "codex" || basic.owned_by === "openai" ? "openai-responses" : "openai-completions";
+  // Per-model native OpenClaw transport; shared with resolve/prepare via inferNativeApiForModelId.
+  const api = inferNativeApiForModelId(id);
   const reasoning = efforts.some((x) => x !== "none");
   const advertisedDefault = typeof rich?.default_reasoning_level === "string"
     ? rich.default_reasoning_level.trim().toLowerCase() : undefined;

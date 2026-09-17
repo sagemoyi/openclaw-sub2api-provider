@@ -1,4 +1,4 @@
-import { CatalogClient, PROVIDER, EFFORTS, normalizeBaseUrl } from "./catalog.js";
+import { CatalogClient, PROVIDER, PROVIDER_DEFAULT_API, EFFORTS, normalizeBaseUrl, inferNativeApiForModelId } from "./catalog.js";
 
 const toLevel = (effort) => effort === "none" ? "off" : effort === "auto" ? "adaptive" : effort;
 const toEffort = (level) => level === "off" ? "none" : level === "adaptive" ? "auto" : level;
@@ -56,10 +56,41 @@ export function patchPayload(payload, api, effort) {
 export function mergeExplicit(model, config) {
   const provider = config?.models?.providers?.[PROVIDER];
   const explicit = provider?.models?.find((m) => m.id === model.id);
-  const merged = { ...model, ...explicit, api: explicit?.api ?? provider?.api ?? model.api,
+  // Same inference as catalog projection: explicit models[].api never overwritten.
+  const api = inferNativeApiForModelId(model.id, {
+    explicitApi: explicit?.api,
+    // Prefer catalog/resolve projected api over provider-wide api so per-model
+    // transport is not silently rewritten (P6 / explicit-wins sibling).
+    providerDefault: model.api ?? provider?.api ?? PROVIDER_DEFAULT_API,
+  });
+  const merged = { ...model, ...explicit, api,
     compat: { ...model.compat, ...explicit?.compat }, params: { ...model.params, ...explicit?.params } };
   if (merged.reasoning === false) merged.compat.supportsReasoningEffort = false;
   return merged;
+}
+
+const ZERO_COST = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+
+/** Minimal row for unknown IDs so resolve/prepare share catalog inference (no host-default fallback). */
+export function inferredUnknownModel(modelId, config) {
+  const provider = config?.models?.providers?.[PROVIDER];
+  const explicit = provider?.models?.find((m) => m.id === modelId);
+  const api = inferNativeApiForModelId(modelId, {
+    explicitApi: explicit?.api,
+    providerDefault: provider?.api ?? PROVIDER_DEFAULT_API,
+  });
+  return {
+    id: modelId,
+    name: typeof explicit?.name === "string" && explicit.name.trim() ? explicit.name : modelId,
+    api,
+    reasoning: explicit?.reasoning === true,
+    input: Array.isArray(explicit?.input) ? explicit.input : ["text"],
+    contextWindow: explicit?.contextWindow ?? 32768,
+    maxTokens: explicit?.maxTokens ?? 4096,
+    cost: { ...ZERO_COST, ...(explicit?.cost ?? {}) },
+    compat: { ...(explicit?.compat ?? {}) },
+    params: { sub2api: { source: "inferred-unknown" }, ...(explicit?.params ?? {}) },
+  };
 }
 
 export function createSub2apiProvider({ fetchRows, resolveAuth, config = {}, logger = { warn() {} }, now, replayHooks = {}, isApiKeyMarker }) {
@@ -151,23 +182,33 @@ export function createSub2apiProvider({ fetchRows, resolveAuth, config = {}, log
     catalog: { order: "simple", async run(ctx) {
       const snapshot = await discover(ctx);
       if (!snapshot) return null;
-      return { provider: { baseUrl: snapshot.baseUrl, apiKey: snapshot.persistedKey, api: "openai-completions", models: snapshot.models } };
+      return { provider: { baseUrl: snapshot.baseUrl, apiKey: snapshot.persistedKey, api: PROVIDER_DEFAULT_API, models: snapshot.models } };
     } },
     staticCatalog: { order: "simple", async run() { return null; } },
     async prepareDynamicModel(ctx) {
+      if (typeof ctx.modelId !== "string" || !ctx.modelId.trim()) return undefined;
+      // Require a successful discover binding; do not invent cross-workspace models.
       const snapshot = await discover(ctx);
-      const row = snapshot?.models.find((m) => m.id === ctx.modelId);
-      return row ? runtimeModel(row, ctx, snapshot.baseUrl) : undefined;
+      if (!snapshot) return undefined;
+      const row = snapshot.models.find((m) => m.id === ctx.modelId)
+        ?? inferredUnknownModel(ctx.modelId, ctx.config ?? config);
+      return runtimeModel(row, ctx, snapshot.baseUrl);
     },
     resolveDynamicModel(ctx) {
+      if (typeof ctx.modelId !== "string" || !ctx.modelId.trim()) return undefined;
       const snapshot = current(ctx);
-      const row = snapshot?.models.find((m) => m.id === ctx.modelId);
-      return row ? runtimeModel(row, ctx, snapshot.baseUrl) : undefined;
+      if (!snapshot) return undefined;
+      const row = snapshot.models.find((m) => m.id === ctx.modelId)
+        ?? inferredUnknownModel(ctx.modelId, ctx.config ?? config);
+      return runtimeModel(row, ctx, snapshot.baseUrl);
     },
     normalizeResolvedModel(ctx) {
+      if (typeof ctx.modelId !== "string" || !ctx.modelId.trim()) return undefined;
       const snapshot = current(ctx);
-      const row = snapshot?.models.find((m) => m.id === ctx.modelId);
-      return row ? { ...ctx.model, ...runtimeModel(row, ctx, snapshot.baseUrl) } : undefined;
+      if (!snapshot) return undefined;
+      const row = snapshot.models.find((m) => m.id === ctx.modelId)
+        ?? inferredUnknownModel(ctx.modelId, ctx.config ?? config);
+      return { ...ctx.model, ...runtimeModel(row, ctx, snapshot.baseUrl) };
     },
     resolveThinkingProfile(ctx) {
       // This hook has no agent/endpoint/auth scope. Only host-supplied facts are
@@ -181,3 +222,5 @@ export function createSub2apiProvider({ fetchRows, resolveAuth, config = {}, log
   };
   return { provider, client, discover, current };
 }
+
+export { inferNativeApiForModelId, PROVIDER_DEFAULT_API } from "./catalog.js";
