@@ -1,0 +1,12 @@
+node_modules/
+*.tgz
+.test-state/
+
+# runtime / local harness (never push)
+ah-run-*/
+.openclaw/
+openclaw-home/
+ENV.txt
+.ah-run-path
+*.log
+.DS_Store
