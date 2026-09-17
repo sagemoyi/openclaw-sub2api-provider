@@ -141,6 +141,7 @@ npm test
 
 ## 发布
 
+发布是一键操作：先 bump `package.json`（并同步两个 README 的 tarball 文件名）、push `main`，然后到 **Actions → Publish to ClawHub → Run workflow** 手动触发（`.github/workflows/clawhub-publish.yml`）。工作流先验证（`npm run check && npm test`）再用 ClawHub trusted publishing（OIDC）发布，无需 token 密钥；若 trusted publishing 被撤销，可添加 `CLAWHUB_TOKEN` 仓库密钥兜底。手动发布可在 checkout 里用 [ClawHub CLI](https://docs.openclaw.ai/clawhub/publishing) 完成：
 插件从 `main` 分支经 [ClawHub CLI](https://docs.openclaw.ai/clawhub/publishing) 发布：
 
 ```bash

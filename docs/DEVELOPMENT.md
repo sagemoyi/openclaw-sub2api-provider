@@ -139,6 +139,7 @@ The host integration suites (`npm run test:host`, `npm run test:gateway`) and `n
 
 ## Publishing
 
+Releases are one click: bump `package.json` (and the tarball names in both READMEs), push `main`, then run **Actions → Publish to ClawHub → Run workflow** (`.github/workflows/clawhub-publish.yml`). The workflow verifies (`npm run check && npm test`) and publishes with ClawHub trusted publishing (OIDC); no token secret is needed. If trusted publishing is revoked, add a `CLAWHUB_TOKEN` repository secret as the fallback. Manual publishing works the same way from a checkout with the [ClawHub CLI](https://docs.openclaw.ai/clawhub/publishing):
 The plugin is published to ClawHub from the `main` branch with the [ClawHub CLI](https://docs.openclaw.ai/clawhub/publishing):
 
 ```bash

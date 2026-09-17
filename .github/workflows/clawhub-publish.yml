@@ -1,0 +1,30 @@
+name: Publish to ClawHub
+
+# One-click release: bump package.json (+ README tarball names), push main,
+# then run this workflow manually (Actions → Publish to ClawHub → Run workflow).
+# Authentication uses ClawHub trusted publishing (OIDC); no token secret is
+# required. If trusted publishing is ever revoked, add a CLAWHUB_TOKEN
+# repository secret and the CLI will use it instead.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: verify + publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Verify
+        run: npm run check && npm test
+      - name: Publish to ClawHub
+        env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+        run: npx -y clawhub@latest package publish . --wait --json
