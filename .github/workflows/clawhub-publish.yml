@@ -27,4 +27,4 @@ jobs:
       - name: Publish to ClawHub
         env:
           CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
-        run: npx -y clawhub@latest package publish . --source-repo sagemoyi/openclaw-sub2api-provider --source-commit ${{ github.sha }} --source-ref main --wait --json
+        run: npx -y clawhub@latest package publish . --source-repo sagemoyi/openclaw-sub2api-provider --source-commit ${{ github.sha }} --source-ref ${{ github.ref }} --wait --json
