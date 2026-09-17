@@ -2,7 +2,7 @@
 
 English | [简体中文](TESTING.md)
 
-Validation is split into pure logic, host integration, and live endpoint tests. Default tests need no CPA credentials and do not call paid models.
+Validation is split into pure logic, host integration, and live endpoint tests. Default tests need no sub2api credentials and do not call paid models.
 
 ## Environment
 
@@ -29,13 +29,13 @@ Do not embed global installation paths, personal credentials, or deployment conf
 
 ## Commands
 
-| Command | Scope | CPA credentials |
+| Command | Scope | sub2api credentials |
 | --- | --- | --- |
 | `npm test` | Pure logic and SDK call contracts | Not required |
 | `npm run check` | Entry point and runtime syntax | Not required |
 | `npm run test:host` | Real OpenClaw SDK, HTTP/SSE, CLI | Not required |
 | `npm run test:gateway` | Isolated Gateway catalog synchronization | Not required |
-| `npm run test:live` | Real requests to a configured CPA endpoint | Required; consumes quota |
+| `npm run test:live` | Real requests to a configured sub2api endpoint | Required; consumes quota |
 
 The automated suites cover pure logic/contracts, host integration, and the Gateway. Current run output gives the test counts; counts do not measure model coverage, so inspect their assertions.
 
@@ -63,7 +63,7 @@ npm run test:host
 npm run test:gateway
 ```
 
-Before importing the host SDK, tests create an isolated state directory and empty configuration so older hosts cannot open a user’s newer database. They also remove inherited API key/token credentials to prevent automatic activation of unrelated providers. Tests start controlled mock CPA servers with test credentials and OS-allocated temporary state directories. Dedicated environment variables isolate OpenClaw configuration and state. Servers and Gateway processes created by the tests are stopped afterward.
+Before importing the host SDK, tests create an isolated state directory and empty configuration so older hosts cannot open a user’s newer database. They also remove inherited API key/token credentials to prevent automatic activation of unrelated providers. Tests start controlled mock sub2api servers with test credentials and OS-allocated temporary state directories. Dedicated environment variables isolate OpenClaw configuration and state. Servers and Gateway processes created by the tests are stopped afterward.
 
 Artifact directories are retained for inspection, and their paths appear in test output. Remove only directories confirmed to belong to the relevant test run.
 
@@ -93,7 +93,7 @@ Live tests are opt-in and can incur costs. Use a test account and models confirm
 Inject `SUB2API_API_KEY` securely, then configure the endpoint and cases:
 
 ```bash
-export SUB2API_BASE_URL='https://cpa.example.com/v1'
+export SUB2API_BASE_URL='https://s2a.example.com/v1'
 export SUB2API_LIVE_CASES='[{"id":"MODEL_ID","level":"high"}]'
 npm run test:live
 ```
@@ -102,15 +102,15 @@ Replace `MODEL_ID` with an actual catalog entry. Do not put real keys in documen
 
 | Field | Required | Description |
 | --- | --- | --- |
-| `id` | Yes | Exact CPA model ID |
+| `id` | Yes | Exact sub2api model ID |
 | `level` | Recommended | OpenClaw thinking level, such as off, low, high, max, or adaptive |
-| `exact` | No | Explicit CPA effort after verifying endpoint support |
+| `exact` | No | Explicit sub2api effort after verifying endpoint support |
 
 The script asserts discovery and request success, and reports protocol, wire effort, stop reason, and usage. It does not print credentials or raw upstream error bodies.
 
 Select differing capabilities: non-reasoning, none-capable, sparse levels, max, and budget-based thinking. Run negative cases separately. An advertised effort rejected by the validator is a compatibility issue, not a successful test.
 
-Tests do not modify CPA accounts, quotas, or model routing. Inventory changes are reproduced with controlled mock services.
+Tests do not modify sub2api accounts, quotas, or model routing. Inventory changes are reproduced with controlled mock services.
 
 ## Updating bundled metadata
 
@@ -131,6 +131,12 @@ The script performs mechanical extraction only. Review:
 
 Do not treat every bundled model as available or add unverified alias mappings.
 
+## Continuous integration
+
+`.github/workflows/ci.yml` runs `npm run check` and `npm test` on Node 22 and 24 for every push and pull request. The job installs nothing: the pure suites use Node's built-in test runner and the package has no runtime dependencies. It needs no credentials and no live endpoint.
+
+The host integration suites (`npm run test:host`, `npm run test:gateway`) and `npm run test:live` stay opt-in and are deliberately **not** part of CI: they need an installed OpenClaw peer, loopback listeners, and — for live — a real endpoint with quota.
+
 ## Before submitting changes
 
 ```bash
@@ -146,11 +152,11 @@ Run integration suites for host or transport changes. Use live tests explicitly 
 
 ## Validation limits and issue reports
 
-Tests do not establish support for every CPA model, maximum context size, multi-agent session, or OpenClaw version. Distinguish:
+Tests do not establish support for every sub2api model, maximum context size, multi-agent session, or OpenClaw version. Distinguish:
 
 - Correct metadata mapping from upstream parameter acceptance.
 - Updated generated catalogs from refreshed Gateway picker caches.
 - API contract coverage from end-to-end host lifecycle validation.
 - Short successful requests from maximum-context stress testing.
 
-Include plugin, OpenClaw, Node.js, and CPA versions, minimal configuration, reproduction commands, and sanitized model metadata/logs in reports. Check endpoint domains, private model names, keys, and request contents before sharing diagnostics.
+Include plugin, OpenClaw, Node.js, and sub2api versions, minimal configuration, reproduction commands, and sanitized model metadata/logs in reports. Check endpoint domains, private model names, keys, and request contents before sharing diagnostics.

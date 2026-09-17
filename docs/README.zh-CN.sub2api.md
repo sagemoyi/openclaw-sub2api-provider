@@ -4,7 +4,7 @@
 
 OpenClaw 外置插件：从 [Wei-Shaw/sub2api](https://github.com/Wei-Shaw/sub2api) 的 OpenAI 兼容面发现模型、同步目录、按模型显式 `api` 投影后走宿主标准传输。
 
-**不** fork sub2api 核心；**不**把 CLIProxyAPI（CPA）私有字段（如 `client_version` 富目录、thinking 预算表）假定可用。
+**不** fork sub2api 核心；**不**假定 CLIProxyAPI（CPA）私有目录字段（如 thinking 预算表）可用；`client_version` 只按 sub2api 的实测语义使用（非空值取 Codex manifest，空值等同无参数）。
 
 ## 身份
 

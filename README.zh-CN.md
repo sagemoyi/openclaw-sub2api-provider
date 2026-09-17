@@ -4,9 +4,9 @@
 
 OpenClaw 外置插件：从 [Wei-Shaw/sub2api](https://github.com/Wei-Shaw/sub2api) 的 OpenAI 兼容 HTTP 面发现模型、同步目录，按模型显式 `api` 投影后走宿主标准传输。
 
-插件 / provider ID：`sub2api-provider`。基于公共插件 SDK，不 fork sub2api 或 OpenClaw 核心。不假定 CLIProxyAPI 私有字段（`client_version` 富目录、thinking 预算表）。
+插件 / provider ID：`sub2api-provider`。基于公共插件 SDK，不 fork sub2api 或 OpenClaw 核心。不假定 CLIProxyAPI 私有目录字段；`client_version` 只按 sub2api 实测语义使用（非空值取 Codex manifest）。
 
-本文占位：端点 `https://s2a.example.com/v1` 或 `http://127.0.0.1:8080/v1`；密钥 `${SUB2API_API_KEY}`。
+本文占位：端点 `https://s2a.example.com/v1` 或 `http://127.0.0.1:8080/v1`；密钥 `${SUB2API_API_KEY}`。CI 在 Node 22/24 上跑 `npm run check && npm test`（`.github/workflows/ci.yml`）；集成套件（`test:host`、`test:gateway`）与 `test:live` 为可选，不进 CI。
 
 ## 功能
 
@@ -30,15 +30,15 @@ OpenClaw 外置插件：从 [Wei-Shaw/sub2api](https://github.com/Wei-Shaw/sub2a
 
 | `api` | 路径 |
 | --- | --- |
-| `openai-completions` | `/v1/chat/completions` |
-| `openai-responses` | `/v1/responses` |
-| `anthropic-messages` | `/v1/messages` |
+| `openai-completions` | `${baseUrl}/chat/completions`（baseUrl 需以 `/v1` 结尾） |
+| `openai-responses` | `${baseUrl}/responses`（baseUrl 需以 `/v1` 结尾） |
+| `anthropic-messages` | `${baseUrl}/v1/messages`（baseUrl 已以 `/v1` 结尾时为 `${baseUrl}/messages`）。**这类行由插件剥离尾部 `/v1`** |
 
-推断（大小写不敏感；显式 `models[].api` 优先）：`claude` → messages；`gpt` / `o1` / `o3` / `o4` / `codex` / `chatgpt` → responses；`gemini` 线索 → completions；**未知 ID 走默认 `openai-completions`（不是官方穷尽表）**。
+推断（大小写不敏感；显式 `models[].api` 优先）：`claude` → messages；`gpt` / `codex` / `chatgpt`，或按 token 边界出现 `o1` / `o3` / `o4` → responses；`gemini` 线索 → completions；**未知 ID 走默认 `openai-completions`（不是官方穷尽表）**。
 
-**已对齐**：本插件 provider 默认是 `openai-completions`，与 OpenClaw 无 `api` 时一致（原分叉已关闭）。按模型推断仍会把 claude / gpt-family 等写成对应协议。钉 **OpenClaw 2026.9.3**。
+**宿主默认并非单一**（2026.9.3 dist 实测）：动态 provider 默认解析路径落到 `openai-completions`；静态目录行是 `row.api ?? "openai-responses"`，请求链末端 fallback 也是 `openai-responses`。本插件**给每条目录模型显式写 `api`**，不依赖宿主任何一种默认——`PROVIDER_DEFAULT_API = "openai-completions"` 只决定插件自己的推断兜底。钉 **OpenClaw 2026.9.3**。
 
-实测摘要：DISCOVER / D1 **PASS**（默认 completions）；P1/P2/P3a **live 待验**；P5-messages 受宿主 `/v1` 双前缀影响。详见 [docs/PROTOCOL.md](docs/PROTOCOL.md)。
+实测摘要：DISCOVER / D1 **PASS**（默认 completions）；P1/P2/P3a **live 待验**（目录无对应线索 ID）。P5-messages **PASS**（0.1.3 live 复测）：显式 `anthropic-messages` → `/v1/messages` 200；A/B 复现旧行为 `…/v1/v1/messages` → 404，根因确认为双 `/v1` 前缀。`client_version=1` Codex manifest 已 live 验证：`rich=true` 为真，真实 context window（272k–1M）与逐模型 reasoning 档位生效。详见 [docs/PROTOCOL.md](docs/PROTOCOL.md)。
 
 覆盖示例：
 
@@ -71,7 +71,7 @@ openclaw plugins install --link .
 
 ```bash
 npm pack
-openclaw plugins install ./sagemoyi-openclaw-sub2api-provider-0.1.2.tgz
+openclaw plugins install ./sagemoyi-openclaw-sub2api-provider-0.1.3.tgz
 ```
 
 若启用 `plugins.allow`，加入 `sub2api-provider`，不要替换其他已允许插件。安装可能需要 `--accept-capabilities`。
@@ -121,7 +121,7 @@ openclaw models set sub2api-provider/MODEL_ID
 - 错 key：**HTTP 401**。
 - 推理：`POST /v1/chat/completions` → 200。
 - 空目录：线上未观测，待补测。
-- catalog 可能仍报 `rich=true`（兼容探测）；应优先普通 `/v1/models`，勿沿用 CPA `client_version`。
+- 探测改发非空 `client_version=1` 以取 sub2api 的 Codex manifest（**空值**在 sub2api 等同无此参数，返回普通列表）——**live 已验（2026-09-17）**。manifest 无 `max_tokens` 字段，输出上限仍保守回退。忽略该参数的服务器会被识别为非 rich。
 
 全文：[docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)。
 

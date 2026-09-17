@@ -14,16 +14,16 @@ Only public OpenClaw SDK interfaces are used. The plugin does not import private
 
 | Source | Purpose | Boundary |
 | --- | --- | --- |
-| `/v1/models` | Availability and ownership | Defines the discoverable model set |
-| `/v1/models?client_version=` | Context, output limits, modalities, reasoning | May contain synthesized defaults rather than complete native capability facts |
+| `/v1/models` | Availability | Defines the discoverable model set. The measured 2026.9.3 rows carry no `owned_by`; the parser only indexes on `id`, so upstream rows that do add `owned_by`/`created` remain compatible |
+| `/v1/models?client_version=1` | Context, modalities, reasoning | sub2api returns its plain list for an **empty** value and its Codex-style manifest for a **non-empty** one (`slug`, `context_window`, `max_context_window`, `supported_reasoning_levels[{effort}]`, `default_reasoning_level`, `input_modalities`; no `max_tokens`). Manifest behavior live-verified 2026-09-17 |
 | `data/cpa-models.json` | Known capability supplements, template corrections, media exclusions | Exact IDs only; no arbitrary alias inference or availability expansion |
 | Explicit provider/model configuration | Deployment-specific capability and protocol overrides | Applied through standard OpenClaw configuration |
 
-CPA returns a client capability catalog when the `client_version` query parameter is present. The reviewed implementation preserves extended reasoning levels for empty or unparseable versions. The official pi plugin uses `client_version=pi`; this plugin uses an empty value.
+sub2api's catalog endpoint is version-gated: an empty `client_version` is treated as absent and returns the ordinary `data[]` list, while a non-empty value selects its Codex-style manifest (top-level `models[]`; rows use `slug` and carry no `max_tokens`). This plugin therefore probes with a non-empty `client_version=1` (live-verified 2026-09-17: the manifest projects real context windows and per-model reasoning levels). The manifest carries no `max_tokens`, so output limits still fall back to the conservative 4096 default.
 
 Parsing accepts `models[]`, `data[]`, or a top-level array. Rich rows support `slug` or `id`; reasoning entries can be strings or objects with an `effort` field. Invalid rows and duplicate rich IDs fail snapshot construction instead of turning bad responses into model deletions.
 
-If the ordinary endpoint succeeds and the rich endpoint returns 404/405, bundled fallback is allowed. Older endpoints that ignore the query parameter and return ordinary rows are also supported. Authentication errors, server errors, and invalid responses are not interpreted as an unsupported rich catalog.
+If the ordinary endpoint succeeds and the rich endpoint returns 400/404/405, conservative fallback is allowed. Older endpoints that ignore the query parameter and return ordinary rows are also supported; `display_name` alone is not treated as a rich feature, since sub2api plain rows carry it. Authentication errors, server errors, and invalid responses are not interpreted as an unsupported rich catalog.
 
 ## Modules
 

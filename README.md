@@ -4,9 +4,8 @@ English | [简体中文](README.zh-CN.md)
 
 An [OpenClaw](https://github.com/openclaw/openclaw) plugin that discovers models from [Wei-Shaw/sub2api](https://github.com/Wei-Shaw/sub2api)'s OpenAI-compatible HTTP API. It syncs the catalog, projects each model with an explicit `api` type, and uses OpenClaw's standard transport.
 
-Provider ID: `sub2api-provider`. Built on the public OpenClaw plugin SDK. This plugin does not fork sub2api or OpenClaw. It does **not** assume CLIProxyAPI-private fields (`client_version` rich catalog, thinking budget tables).
-
-Placeholders only in this README: endpoint `https://s2a.example.com/v1` or `http://127.0.0.1:8080/v1`; key `${SUB2API_API_KEY}`.
+Provider ID: `sub2api-provider`. Built on the public OpenClaw plugin SDK. This plugin does not fork sub2api or OpenClaw. It does **not** assume CLIProxyAPI-private catalog fields (`client_version` manifest semantics or thinking budget tables) beyond the documented `client_version` probe.
+Placeholders only in this README: endpoint `https://s2a.example.com/v1` or `http://127.0.0.1:8080/v1`; key `${SUB2API_API_KEY}`. CI runs `npm run check && npm test` on Node 22/24 (`.github/workflows/ci.yml`); integration suites (`test:host`, `test:gateway`) and `test:live` are opt-in and not part of CI.
 
 ## What it does
 
@@ -30,15 +29,15 @@ The host uses OpenClaw native `api`. This plugin only writes catalog fields; it 
 
 | `api` | Path |
 | --- | --- |
-| `openai-completions` | `/v1/chat/completions` |
-| `openai-responses` | `/v1/responses` |
-| `anthropic-messages` | `/v1/messages` |
+| `openai-completions` | `${baseUrl}/chat/completions` (baseUrl must end in `/v1`) |
+| `openai-responses` | `${baseUrl}/responses` (baseUrl must end in `/v1`) |
+| `anthropic-messages` | `${baseUrl}/v1/messages` (or `${baseUrl}/messages` when baseUrl already ends in `/v1`). **Rows on this API get their trailing `/v1` stripped by the plugin** |
 
-Inference (case-insensitive; explicit `models[].api` wins): `claude` → messages; `gpt` / `o1` / `o3` / `o4` / `codex` / `chatgpt` → responses; `gemini` clues → completions; **unknown IDs use the provider default `openai-completions` (not an official exhaustive table)**.
+Inference (case-insensitive; explicit `models[].api` wins): `claude` → messages; `gpt` / `codex` / `chatgpt`, or `o1` / `o3` / `o4` on a token boundary → responses; `gemini` clues → completions; **unknown IDs use the provider default `openai-completions` (not an official exhaustive table)**.
 
-**Aligned:** this provider defaults to `openai-completions`, matching OpenClaw when a model has no `api` (the old responses/completions fork is closed). Per-model inference still maps claude / gpt-family etc. Locked to **OpenClaw 2026.9.3**.
+**Host defaults are not uniform (measured on the 2026.9.3 dist):** the dynamic-provider resolution path lands on `openai-completions`; static catalog rows are `row.api ?? "openai-responses"` and the end-of-chain fallback is also `openai-responses`. This plugin writes an explicit `api` on every catalog row, so it does not depend on either default — `PROVIDER_DEFAULT_API = "openai-completions"` only decides the plugin's own inference fallback. Locked to **OpenClaw 2026.9.3**.
 
-Measured: DISCOVER / D1 **PASS** (default completions); P1/P2/P3a **live pending**; P5-messages is affected by the host `/v1` double prefix. See [docs/PROTOCOL.md](docs/PROTOCOL.md).
+Measured: DISCOVER / D1 **PASS** (default completions); P1/P2/P3a **live pending** (no clue IDs in the catalog). P5-messages **PASS** (0.1.3, live re-verified): explicit `anthropic-messages` → `/v1/messages` 200, and an A/B rerun with the old `/v1`-suffixed row URL reproduced the `/v1/v1/messages` 404 — the double prefix was the root cause. The `client_version=1` Codex manifest is live-verified: `rich=true` is truthful, with real context windows (272k–1M) and per-model reasoning levels. See [docs/PROTOCOL.md](docs/PROTOCOL.md).
 
 Override:
 
@@ -71,7 +70,7 @@ Or pack a tarball:
 
 ```bash
 npm pack
-openclaw plugins install ./sagemoyi-openclaw-sub2api-provider-0.1.2.tgz
+openclaw plugins install ./sagemoyi-openclaw-sub2api-provider-0.1.3.tgz
 ```
 
 If you use `plugins.allow`, add `sub2api-provider` without replacing other allowed plugins. The install may prompt `--accept-capabilities`.
@@ -121,7 +120,7 @@ Set `useBundledMetadata` only if you have a sub2api-measured snapshot. Do not tr
 - Wrong key: **HTTP 401**.
 - Inference: `POST /v1/chat/completions` → 200.
 - Empty catalog: not observed on the live host; treat as pending.
-- Catalog may still report `rich=true` from a compatibility probe; prefer plain `/v1/models` and do not reuse CPA `client_version`.
+- Discovery probes `client_version=1` to request sub2api's Codex manifest (an **empty** value is treated as absent by sub2api and returns the plain list) — **live-verified 2026-09-17**. The manifest carries no `max_tokens`, so output limits still fall back conservatively. A server that ignores the parameter is detected and treated as non-rich.
 
 Full matrix: [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
 

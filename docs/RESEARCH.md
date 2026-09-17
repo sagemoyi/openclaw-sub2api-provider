@@ -14,16 +14,16 @@
 
 | 来源 | 用途 | 边界 |
 | --- | --- | --- |
-| `/v1/models` | 模型可用性与归属 | 定义可注册的模型集合 |
-| `/v1/models?client_version=` | 上下文、输出限制、输入模态、reasoning 档位 | 可能包含合成默认值，不等同于完整原生能力事实 |
+| `/v1/models` | 模型可用性 | 定义可注册的模型集合。实测 2026.9.3 行无 `owned_by`；解析器只按 `id` 建索引，上游若新增 `owned_by`/`created` 仍兼容 |
+| `/v1/models?client_version=1` | 上下文、输入模态、reasoning 档位 | sub2api 对**空值**返回普通列表，对**非空值**返回 Codex 形 manifest（`slug`、`context_window`、`max_context_window`、`supported_reasoning_levels[{effort}]`、`default_reasoning_level`、`input_modalities`；无 `max_tokens`）。manifest 行为 live 已验（2026-09-17） |
 | `data/cpa-models.json` | 已知模型能力补充、模板修正和媒体模型排除 | 按精确 ID 匹配，不推断任意 alias，不扩展可用模型集合 |
 | 显式 provider/model 配置 | 部署特定的能力和协议覆盖 | 经 OpenClaw 原有配置机制处理 |
 
-CPA 在查询参数中存在 `client_version` 时返回客户端能力目录。已审查的实现对空值或不可解析的版本保留扩展 reasoning 档位；官方 pi 插件使用 `client_version=pi`，本项目使用空值。
+sub2api 的目录端点按版本参数分档：`client_version` 为空等同无参数，返回普通 `data[]` 列表；**非空**值则返回 Codex 形 manifest（顶层 `models[]`，行用 `slug`，无 `max_tokens`）。因此本项目探测发非空 `client_version=1`（2026-09-17 live 已验：manifest 投影出真实 context window 与逐模型 reasoning 档位）。manifest 无 `max_tokens`，输出上限仍回退保守值 4096。
 
 解析器接受 `models[]`、`data[]` 或顶层数组。丰富目录的模型标识支持 `slug` 和 `id`，reasoning 支持字符串及含 `effort` 字段的对象。非法行和重复丰富目录 ID 会使快照构建失败，避免把坏响应解释为模型删除。
 
-普通接口返回成功而丰富接口返回 404/405 时，允许使用后备数据。忽略查询参数、仅返回普通列表的旧端点也可回退。认证错误、服务端错误和无效响应不被当作“不支持丰富目录”。
+普通接口返回成功而丰富接口返回 400/404/405 时，允许保守回退。忽略查询参数、仅返回普通列表的旧端点也可回退；普通行自带 `display_name`，仅凭该字段不算 rich 特征。认证错误、服务端错误和无效响应不被当作“不支持丰富目录”。
 
 ## 模块职责
 

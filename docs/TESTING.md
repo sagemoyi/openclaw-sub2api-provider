@@ -2,7 +2,7 @@
 
 [English](DEVELOPMENT.md) | 简体中文
 
-测试分为纯逻辑、宿主集成和真实端点三层。默认测试不需要 CPA 凭据，也不会调用付费模型。
+测试分为纯逻辑、宿主集成和真实端点三层。默认测试不需要 sub2api 凭据，也不会调用付费模型。
 
 ## 开发环境
 
@@ -29,13 +29,13 @@ npm install --no-save --package-lock=false openclaw@2026.7.1-2
 
 ## 测试命令
 
-| 命令 | 范围 | 是否需要 CPA 凭据 |
+| 命令 | 范围 | 是否需要 sub2api 凭据 |
 | --- | --- | --- |
 | `npm test` | 纯逻辑与 SDK 调用契约 | 否 |
 | `npm run check` | 插件入口和运行时模块语法 | 否 |
 | `npm run test:host` | 真实 OpenClaw SDK、HTTP/SSE 和 CLI | 否 |
 | `npm run test:gateway` | 隔离 Gateway 的自动目录同步 | 否 |
-| `npm run test:live` | 指定 CPA 端点的真实模型请求 | 是，会消耗额度 |
+| `npm run test:live` | 指定 sub2api 端点的真实模型请求 | 是，会消耗额度 |
 
 自动化测试包含纯逻辑／契约、宿主集成和 Gateway 测试。测试数量以当前运行输出为准；数量不代表模型覆盖率，应以各测试的断言为准。
 
@@ -63,7 +63,7 @@ npm run test:host
 npm run test:gateway
 ```
 
-测试在导入宿主 SDK 前就创建独立状态目录和空配置，避免旧宿主读取个人环境中的新版数据库；同时清除进程继承的 API key/token 等凭据变量，防止宿主自动启用无关 provider。测试启动可控的模拟 CPA 服务，使用测试凭据和操作系统分配的临时状态目录。OpenClaw 的配置与状态通过专用环境变量指向该目录，测试结束关闭其创建的服务器和 Gateway 进程。
+测试在导入宿主 SDK 前就创建独立状态目录和空配置，避免旧宿主读取个人环境中的新版数据库；同时清除进程继承的 API key/token 等凭据变量，防止宿主自动启用无关 provider。测试启动可控的模拟 sub2api 服务，使用测试凭据和操作系统分配的临时状态目录。OpenClaw 的配置与状态通过专用环境变量指向该目录，测试结束关闭其创建的服务器和 Gateway 进程。
 
 测试目录会保留，便于检查目录文件和日志。路径由测试输出提供；清理时只删除确认属于该次测试的目录。
 
@@ -88,12 +88,12 @@ npm run test:gateway
 
 ## 真实端点测试
 
-真实测试是显式选择的操作，会向 CPA 发出推理请求并可能产生费用。请使用测试账号和已确认可用的模型。
+真实测试是显式选择的操作，会向 sub2api 发出推理请求并可能产生费用。请使用测试账号和已确认可用的模型。
 
 通过安全的环境注入方式提供 `SUB2API_API_KEY`，再设置端点和测试用例：
 
 ```bash
-export SUB2API_BASE_URL='https://cpa.example.com/v1'
+export SUB2API_BASE_URL='https://s2a.example.com/v1'
 export SUB2API_LIVE_CASES='[{"id":"MODEL_ID","level":"high"}]'
 npm run test:live
 ```
@@ -104,15 +104,15 @@ npm run test:live
 
 | 字段 | 必需 | 说明 |
 | --- | --- | --- |
-| `id` | 是 | CPA 返回的精确模型 ID |
+| `id` | 是 | sub2api 返回的精确模型 ID |
 | `level` | 建议 | OpenClaw thinking 档位，如 off、low、high、max、adaptive |
-| `exact` | 否 | 显式 CPA reasoning effort，须已确认端点支持 |
+| `exact` | 否 | 显式 sub2api reasoning effort，须已确认端点支持 |
 
 脚本检查模型是否被发现、调用是否失败，并输出协议、实际 effort、停止原因和用量，不输出认证凭据或原始上游错误体。
 
 建议选择多个能力不同的模型：非 reasoning、允许 none、稀疏档位、max 以及预算型 thinking。负面用例应单独运行；目录宣告但验证器拒绝的 effort 应记作兼容性问题，而非成功覆盖。
 
-自动化测试不主动修改 CPA 账号、配额或模型路由。目录变化使用模拟服务复现。
+自动化测试不主动修改 sub2api 账号、配额或模型路由。目录变化使用模拟服务复现。
 
 ## 更新后备元数据
 
@@ -133,6 +133,12 @@ npm test
 
 不要将快照中的全部模型视为端点可用模型，也不要为未知 alias 添加未经证实的能力映射。
 
+## 持续集成
+
+`.github/workflows/ci.yml` 在每次 push / pull request 上用 Node 22 与 24 运行 `npm run check` 与 `npm test`。该任务不安装依赖：纯逻辑测试使用 Node 内置测试运行器，包本身无运行时依赖；也不需要凭据或真实端点。
+
+宿主集成套件（`npm run test:host`、`npm run test:gateway`）与 `npm run test:live` 保持显式选择，**不**进 CI：它们需要已安装的 OpenClaw peer、回环监听，live 还需要带额度的真实端点。
+
 ## 提交前检查
 
 ```bash
@@ -148,11 +154,11 @@ npm pack --dry-run
 
 ## 验证边界与问题报告
 
-当前测试不证明所有 CPA 模型、最大上下文、多 agent 会话或所有 OpenClaw 版本都受支持。尤其需要区分：
+当前测试不证明所有 sub2api 模型、最大上下文、多 agent 会话或所有 OpenClaw 版本都受支持。尤其需要区分：
 
 - 元数据映射正确与上游实际接受参数。
 - 生成目录已更新与 Gateway 选择器缓存已刷新。
 - API 契约成立与完整宿主生命周期已验证。
 - 短请求成功与最大上下文压力测试通过。
 
-报告问题时请附上插件、OpenClaw、Node.js 和 CPA 版本，最小配置、复现命令，以及脱敏后的相关模型能力和日志。提交诊断前检查端点域名、私有模型名称、密钥和请求内容，避免泄露部署信息。
+报告问题时请附上插件、OpenClaw、Node.js 和 sub2api 版本，最小配置、复现命令，以及脱敏后的相关模型能力和日志。提交诊断前检查端点域名、私有模型名称、密钥和请求内容，避免泄露部署信息。
