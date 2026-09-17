@@ -36,9 +36,9 @@ OpenClaw 外置插件：从 [Wei-Shaw/sub2api](https://github.com/Wei-Shaw/sub2a
 
 推断（大小写不敏感；显式 `models[].api` 优先）：`claude` → messages；`gpt` / `o1` / `o3` / `o4` / `codex` / `chatgpt` → responses；`gemini` 线索 → completions；**未知 ID 走默认 `openai-completions`（不是官方穷尽表）**。
 
-**默认对齐**：本插件 provider 默认是 `openai-completions`，与 OpenClaw 无 `api` 时一致（原分叉已关闭）。按模型推断仍会把 claude / gpt-family 等写成对应协议。钉 **OpenClaw 2026.9.3**。
+**已对齐**：本插件 provider 默认是 `openai-completions`，与 OpenClaw 无 `api` 时一致（原分叉已关闭）。按模型推断仍会把 claude / gpt-family 等写成对应协议。钉 **OpenClaw 2026.9.3**。
 
-实测摘要（改默认前）：P1/P2/P3a **live 待验**；P5-messages 受宿主 `/v1` 双前缀影响。改默认后 D1/P4 → completions 已复测（见工作区矩阵）。详见 [docs/PROTOCOL.md](docs/PROTOCOL.md)。
+实测摘要：DISCOVER / D1 **PASS**（默认 completions）；P1/P2/P3a **live 待验**；P5-messages 受宿主 `/v1` 双前缀影响。详见 [docs/PROTOCOL.md](docs/PROTOCOL.md)。
 
 覆盖示例：
 

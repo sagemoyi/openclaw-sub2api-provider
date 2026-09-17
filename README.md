@@ -36,9 +36,9 @@ The host uses OpenClaw native `api`. This plugin only writes catalog fields; it 
 
 Inference (case-insensitive; explicit `models[].api` wins): `claude` → messages; `gpt` / `o1` / `o3` / `o4` / `codex` / `chatgpt` → responses; `gemini` clues → completions; **unknown IDs use the provider default `openai-completions` (not an official exhaustive table)**.
 
-**Defaults aligned:** this provider defaults to `openai-completions`, matching OpenClaw when a model has no `api` (the old responses/completions fork is closed). Per-model inference still maps claude / gpt-family etc. Locked to **OpenClaw 2026.9.3**.
+**Aligned:** this provider defaults to `openai-completions`, matching OpenClaw when a model has no `api` (the old responses/completions fork is closed). Per-model inference still maps claude / gpt-family etc. Locked to **OpenClaw 2026.9.3**.
 
-Measured (before the default change): P1/P2/P3a **live pending**; P5-messages is affected by the host `/v1` double prefix. After default change: D1/P4 → completions PASS (see workspace matrix). See [docs/PROTOCOL.md](docs/PROTOCOL.md).
+Measured: DISCOVER / D1 **PASS** (default completions); P1/P2/P3a **live pending**; P5-messages is affected by the host `/v1` double prefix. See [docs/PROTOCOL.md](docs/PROTOCOL.md).
 
 Override:
 
