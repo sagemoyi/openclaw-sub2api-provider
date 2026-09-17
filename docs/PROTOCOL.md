@@ -82,7 +82,7 @@ Gemini：按 Copilot 写成 completions，可被显式 `api` 覆盖；目录若�
 
 ## 5. 测项结果（OpenClaw 2026.9.3）
 
-下列为**改默认前**矩阵（当时 providerDefault=`openai-responses`）。**改默认后复测**见工作区外 `/workspace/sub2api/BINGBU-matrix-default-completions.md`（D1/DISCOVER/P4 口径 → completions；P1/P2/P3a live 仍待验）。
+下列为**改默认前**矩阵（当时 providerDefault=`openai-responses`）。**改默认后复测**见工作区外矩阵（不入库）：D1/DISCOVER/P4 口径 → completions；P1/P2/P3a live 仍待验。
 
 Live 目录（改默认前）：7 条；`api` 分布全为 `openai-responses`；**无** claude / gpt-family / gemini 子串（样例族：composer* / deep* / grok-* / kimi-* / k3*）。
 
