@@ -5,7 +5,7 @@ import { selectEffort } from "../src/provider.js";
 const model = (efforts, defaultEffort = "high") => ({ reasoning: true,
   compat: { supportedReasoningEfforts: efforts }, params: { sub2api: { defaultEffort } } });
 
-test("OpenClaw logical ultra never implicitly becomes CPA's raw ultra effort", () => {
+test("OpenClaw logical ultra never implicitly becomes sub2api's raw ultra effort", () => {
   const m = model(["low", "high", "max", "ultra"]);
   assert.equal(selectEffort(m, "ultra"), "max");
   assert.equal(selectEffort(model(["low", "high", "ultra"]), "ultra"), "high");

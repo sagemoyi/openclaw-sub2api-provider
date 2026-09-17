@@ -42,10 +42,11 @@ export default definePluginEntry({
       staticCatalog: () => [],
       async liveCatalog(ctx) {
         const snapshot = await cpa.discover(ctx);
-        return snapshot?.models.map((row) => {
+        if (!snapshot) return undefined;
+        return snapshot.models.map((row) => {
           const model = mergeExplicit(row, ctx.config);
           return { kind: "text", provider: PROVIDER, model: model.id, label: model.name, source: "live" };
-        }) ?? [];
+        });
       },
     });
     const sync = createCatalogSynchronizer({

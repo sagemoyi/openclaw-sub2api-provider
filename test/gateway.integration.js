@@ -37,7 +37,7 @@ test("Gateway publishes additions, removals, capabilities and empty catalogs on 
     models: { providers: { "sub2api-provider": { baseUrl: `http://127.0.0.1:${server.address().port}/v1`, apiKey: "test-key", models: [] } } },
     plugins: { allow: ["sub2api-provider"], load: { paths: [process.cwd()] }, entries: { "sub2api-provider": { enabled: true, config: { refreshSeconds: 10 } } } },
     agents: { defaults: { workspace: path.join(stateDir, "workspace"), model: { primary: "sub2api-provider/model-b" }, models: { "sub2api-provider/*": {} } } } };
-  // Reproduce login on a modern host with a pre-existing policy that hides CPA.
+  // Reproduce login on a modern host with a pre-existing policy that hides sub2api.
   if (prepared) {
     config.agents.defaults.modelPolicy = { allow: ["unrelated/model"] };
     Object.assign(config.agents.defaults, buildAuthModelAccessPatch(config).defaults);

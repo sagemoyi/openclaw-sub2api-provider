@@ -1,4 +1,4 @@
-// Explicit opt-in: sends real, small requests to CPA and may consume provider quota.
+// Explicit opt-in: sends real, small requests to sub2api and may consume provider quota.
 // Credentials are read from SUB2API_BASE_URL + SUB2API_API_KEY, never printed.
 import assert from "node:assert/strict";
 import { fetchLiveProviderModelRows } from "openclaw/plugin-sdk/provider-catalog-live-runtime";
@@ -20,7 +20,7 @@ const cases = process.env.SUB2API_LIVE_CASES ? JSON.parse(process.env.SUB2API_LI
 for (const entry of cases) {
   const ctx = { config, modelId: entry.id, thinkingLevel: entry.level, extraParams: { sub2apiReasoningEffort: entry.exact } };
   const model = cpa.provider.resolveDynamicModel(ctx);
-  assert.ok(model, `CPA did not advertise ${entry.id}`);
+  assert.ok(model, `sub2api did not advertise ${entry.id}`);
   let wireEffort;
   const capture = (m, messages, opts) => streamSimple(m, messages, { ...opts, onPayload: async (p, wireModel) => {
     const body = await opts.onPayload(p, wireModel);

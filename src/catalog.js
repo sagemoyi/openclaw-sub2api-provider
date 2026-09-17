@@ -13,18 +13,26 @@ const strings = (x) => Array.isArray(x) ? [...new Set(x.filter((s) => typeof s =
 const idOf = (row, key) => record(row) && typeof row[key] === "string" && row[key].trim() && !/[\x00-\x1f\x7f]/.test(row[key]) ? row[key].trim() : undefined;
 
 export const PROVIDER_DEFAULT_API = "openai-completions";
+// sub2api treats an EMPTY client_version as absent and returns the plain list; a
+// non-empty value selects its Codex-style manifest (slug, context_window,
+// max_context_window, supported_reasoning_levels[{effort}], default_reasoning_level,
+// input_modalities; no max_tokens). The manifest behavior is live-verification pending.
+const RICH_CLIENT_VERSION = "1";
 
 /**
  * Infer OpenClaw native `api` for a model id.
  * Order: explicitApi (never overwritten) → id substring inference → providerDefault.
  * First version skips optional prefix-override tables.
  */
+// o1/o3/o4 are matched on token boundaries: OpenAI's o-series ids are exact tokens
+// (o1-pro, o3-mini, o4-mini), while unrelated ids such as `hero12b-instruct` merely
+// contain the letters `o1` as a substring and must not become openai-responses.
+const O_SERIES_CLUE = /(?:^|[^a-z0-9])o[134](?:[^a-z0-9]|$)/;
 export function inferNativeApiForModelId(id, { explicitApi, providerDefault = PROVIDER_DEFAULT_API } = {}) {
   if (typeof explicitApi === "string" && explicitApi.trim()) return explicitApi.trim();
   const lower = String(id ?? "").toLowerCase();
   if (lower.includes("claude")) return "anthropic-messages";
-  if (lower.includes("gpt") || lower.includes("chatgpt") || lower.includes("codex")
-      || lower.includes("o1") || lower.includes("o3") || lower.includes("o4")) {
+  if (lower.includes("gpt") || lower.includes("chatgpt") || lower.includes("codex") || O_SERIES_CLUE.test(lower)) {
     return "openai-responses";
   }
   if (lower.includes("gemini")) return "openai-completions";
@@ -42,6 +50,13 @@ export function normalizeBaseUrl(value) {
   const path = url.pathname.replace(/\/+$/, "");
   url.pathname = path.endsWith("/v1") ? path : path + "/v1";
   return url.toString().replace(/\/+$/, "");
+}
+
+/** OpenClaw's anthropic-messages transport appends /v1/messages to model.baseUrl,
+ *  so rows on that API must not keep the /v1 suffix that normalizeBaseUrl() forces
+ *  for the OpenAI-family endpoints. */
+export function stripV1Suffix(baseUrl) {
+  return typeof baseUrl === "string" && baseUrl.endsWith("/v1") ? baseUrl.slice(0, -3) : baseUrl;
 }
 
 export function readCatalogRows(body) {
@@ -223,7 +238,7 @@ export class CatalogClient {
       readRows: readCatalogRows, requireHttps: false });
     entry.pending = (async () => {
       try {
-        const results = await Promise.allSettled([fetch("/models"), fetch("/models?client_version=")]);
+        const results = await Promise.allSettled([fetch("/models"), fetch(`/models?client_version=${RICH_CLIENT_VERSION}`)]);
         // Authentication failure on either endpoint must invalidate stale metadata.
         const authError = results.find((r) => r.status === "rejected" && [401, 403].includes(r.reason?.status));
         if (authError) throw authError.reason;
@@ -232,16 +247,21 @@ export class CatalogClient {
         let rich = [];
         if (results[1].status === "fulfilled") {
           const rows = results[1].value;
-          // Older CPA servers ignore the query parameter and return the ordinary list.
+          // A server that ignores the parameter returns the ordinary list. `display_name`
+          // and `name` are NOT discriminators: sub2api's plain rows carry display_name too.
+          // Real rich rows always carry `slug` or a capability field.
           if (rows.length && rows.every((r) => idOf(r, "id") && !r.slug &&
             !["supported_reasoning_levels", "default_reasoning_level", "context_window", "max_context_window",
-              "max_tokens", "input_modalities", "visibility", "display_name", "name"].some((key) => Object.hasOwn(r, key)))) {
+              "max_tokens", "input_modalities", "visibility"].some((key) => Object.hasOwn(r, key)))) {
             this.warn("sub2api has no rich catalog; using conservative defaults (bundled metadata only if enabled)");
           } else rich = rows;
-        } else if ([404, 405].includes(results[1].reason?.status)) {
+        } else if ([400, 404, 405].includes(results[1].reason?.status)) {
           this.warn("sub2api rich catalog unavailable; using conservative defaults (bundled metadata only if enabled)");
         } else throw results[1].reason;
         const models = projectCatalog(basic, rich, this);
+        // Anthropic-protocol rows carry their own baseUrl without the /v1 suffix; the
+        // provider-level baseUrl keeps /v1 for the OpenAI-family endpoints.
+        for (const model of models) if (model.api === "anthropic-messages") model.baseUrl = stripV1Suffix(baseUrl);
         entry.at = this.now();
         entry.retryAt = 0;
         entry.error = undefined;

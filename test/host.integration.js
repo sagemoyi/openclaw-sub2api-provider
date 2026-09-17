@@ -156,7 +156,7 @@ test("isolated OpenClaw CLI installs and loads the provider and fetches live cat
   assert.deepEqual(initial.models.map((m) => m.id), ids);
   assert.ok(!JSON.stringify(initial).includes("test-key"));
   assert.ok(!Object.hasOwn(initial, "baseUrl"));
-  assert.ok(!JSON.stringify(initial).includes(config.models.providers.sub2api-provider.baseUrl));
+  assert.ok(!JSON.stringify(initial).includes(config.models.providers["sub2api-provider"].baseUrl));
   const firstSync = JSON.parse((await cli("sub2api", "sync")).stdout);
   assert.equal(firstSync.synced, true);
   const firstList = await cli("models", "list", "--all", "--provider", "sub2api-provider", "--json");

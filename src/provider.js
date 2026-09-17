@@ -1,4 +1,4 @@
-import { CatalogClient, PROVIDER, PROVIDER_DEFAULT_API, EFFORTS, normalizeBaseUrl, inferNativeApiForModelId } from "./catalog.js";
+import { CatalogClient, PROVIDER, PROVIDER_DEFAULT_API, EFFORTS, normalizeBaseUrl, inferNativeApiForModelId, stripV1Suffix } from "./catalog.js";
 
 const toLevel = (effort) => effort === "none" ? "off" : effort === "auto" ? "adaptive" : effort;
 const toEffort = (level) => level === "off" ? "none" : level === "adaptive" ? "auto" : level;
@@ -20,14 +20,14 @@ export function selectEffort(model, requested, exact) {
     return undefined;
   }
   if (exact !== undefined) {
-    if (typeof exact !== "string" || !supported.includes(exact)) throw new Error("sub2apiReasoningEffort is not advertised by the selected CPA model");
+    if (typeof exact !== "string" || !supported.includes(exact)) throw new Error("sub2apiReasoningEffort is not advertised by the selected sub2api model");
     return exact;
   }
-  // Logical /think ultra belongs to OpenClaw orchestration. Raw CPA ultra
+  // Logical /think ultra belongs to OpenClaw orchestration. Raw sub2api ultra
   // is an explicitly opted-in wire override only (handled above).
   const wanted = toEffort(requested === "ultra" ? "max" : requested);
   if (supported.includes(wanted)) return wanted;
-  // off cannot mean 'omit' for an always-thinking model: omission lets CPA use its default.
+  // off cannot mean 'omit' for an always-thinking model: omission lets sub2api use its default.
   // Fall back by strength for stale session settings, matching OpenClaw's thinking profiles.
   if (wanted && !["none", "auto"].includes(wanted)) {
     const rank = EFFORTS.indexOf(wanted);
@@ -41,7 +41,8 @@ export function selectEffort(model, requested, exact) {
 }
 
 export function patchPayload(payload, api, effort) {
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error("CPA transport produced an invalid payload");
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error("sub2api transport produced an invalid payload");
+  if (api === "anthropic-messages") return payload; // the host owns Anthropic thinking natively
   if (api === "openai-responses") {
     // Keep the host's other reasoning settings, but never force a summary on a model with no controls.
     if (effort === undefined) delete payload.reasoning;
@@ -157,7 +158,13 @@ export function createSub2apiProvider({ fetchRows, resolveAuth, config = {}, log
     return binding ? client.peekByKey(binding) : undefined;
   }
   function runtimeModel(model, ctx, baseUrl) {
-    return { ...mergeExplicit(model, ctx.config ?? config), provider: PROVIDER, baseUrl };
+    const merged = mergeExplicit(model, ctx.config ?? config);
+    const explicitBaseUrl = (ctx.config ?? config).models?.providers?.[PROVIDER]?.models
+      ?.find((m) => m.id === merged.id)?.baseUrl;
+    // Recompute from the final api: an explicit models[].api override can flip a row
+    // to/from anthropic-messages after catalog stamping.
+    const effective = merged.api === "anthropic-messages" ? stripV1Suffix(baseUrl) : baseUrl;
+    return { ...merged, provider: PROVIDER, baseUrl: explicitBaseUrl ?? effective };
   }
   function wrap(ctx) {
     if (!ctx.streamFn) return undefined;

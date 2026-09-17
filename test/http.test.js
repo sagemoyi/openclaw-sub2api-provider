@@ -1,4 +1,4 @@
-// Real loopback HTTP integration for our catalog logic, NOT an OpenClaw SDK/CPA-server E2E.
+// Real loopback HTTP integration for our catalog logic, NOT an OpenClaw SDK/sub2api-server E2E.
 // The production plugin still uses OpenClaw's guarded acquisition helper, not this adapter.
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -44,7 +44,7 @@ test("loopback HTTP: reverse-proxy prefix, authentication and raw key rotation",
   assert.deepEqual((await cpa.discover()).models.map((m) => m.id), ["model-a"]);
   assert.deepEqual((await cpa.discover({}, { apiKey: "test-b" })).models.map((m) => m.id), ["model-b"]);
   assert.deepEqual(seen.map(([url]) => url).sort(), [
-    "/cpa/v1/models", "/cpa/v1/models", "/cpa/v1/models?client_version=", "/cpa/v1/models?client_version=",
+    "/cpa/v1/models", "/cpa/v1/models", "/cpa/v1/models?client_version=1", "/cpa/v1/models?client_version=1",
   ]);
   assert.equal(seen.filter(([, auth]) => auth === "Bearer test-b").length, 2);
 });

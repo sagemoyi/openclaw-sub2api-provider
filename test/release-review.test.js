@@ -192,7 +192,7 @@ test("a workspace change is not skipped as an unchanged publication", async () =
   assert.equal(writes, 2);
 });
 
-test("an unresolved host auth marker never goes to CPA or a second profile", async () => {
+test("an unresolved host auth marker never goes to sub2api or a second profile", async () => {
   let calls = 0;
   const cpa = fixture({ isApiKeyMarker: (value) => value === "test-secretref-marker",
     fetchRows: async () => { calls++; return []; },
