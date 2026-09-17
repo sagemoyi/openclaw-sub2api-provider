@@ -42,11 +42,11 @@ test("provider refreshes capabilities, refuses deleted models, and composes payl
   assert.equal((await cpa.provider.catalog.run(ctx)).provider.models.length, 1);
   assert.equal(cpa.provider.resolveDynamicModel(ctx).contextWindow, 64000);
   const wrapped = cpa.provider.wrapStreamFn({ ...ctx, thinkingLevel: "high", streamFn: async (m, messages, options) => {
-    payload = await options.onPayload({ model: m.id, reasoning: { effort: "low" } }, m); return { model: m, messages };
+    payload = await options.onPayload({ model: m.id, reasoning_effort: "low" }, m); return { model: m, messages };
   } });
   const result = await wrapped({ id: "custom" }, { messages: [] }, { onPayload: async (p) => ({ ...p, retained: true }) });
-  assert.equal(result.model.reasoning, true); assert.equal(payload.reasoning.effort, "high"); assert.equal(payload.retained, true);
-  efforts = []; time += 10001; await wrapped({ id: "custom" }, { messages: [] }); assert.equal(payload.reasoning, undefined);
+  assert.equal(result.model.reasoning, true); assert.equal(payload.reasoning_effort, "high"); assert.equal(payload.retained, true);
+  efforts = []; time += 10001; await wrapped({ id: "custom" }, { messages: [] }); assert.equal(payload.reasoning_effort, undefined);
   ids = ["new-model"]; time += 10001;
   await assert.rejects(wrapped({ id: "custom" }, { messages: [] }), /no longer advertised/);
   await cpa.provider.prepareDynamicModel({ ...ctx, modelId: "new-model" });
@@ -69,6 +69,6 @@ test("resolve/prepare apply shared inference for unknown ids", async () => {
     fetchRows: async () => [] });
   await cpa.provider.catalog.run({ config: cfg });
   assert.equal(cpa.provider.resolveDynamicModel({ config: cfg, modelId: "claude-mystery" }).api, "anthropic-messages");
-  assert.equal(cpa.provider.resolveDynamicModel({ config: cfg, modelId: "totally-unknown-xyz" }).api, "openai-responses");
+  assert.equal(cpa.provider.resolveDynamicModel({ config: cfg, modelId: "totally-unknown-xyz" }).api, "openai-completions");
   assert.equal((await cpa.provider.prepareDynamicModel({ config: cfg, modelId: "gemini-flash" })).api, "openai-completions");
 });

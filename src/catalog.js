@@ -12,7 +12,7 @@ const record = (x) => x !== null && typeof x === "object" && !Array.isArray(x);
 const strings = (x) => Array.isArray(x) ? [...new Set(x.filter((s) => typeof s === "string").map((s) => s.trim().toLowerCase()).filter(Boolean))] : [];
 const idOf = (row, key) => record(row) && typeof row[key] === "string" && row[key].trim() && !/[\x00-\x1f\x7f]/.test(row[key]) ? row[key].trim() : undefined;
 
-export const PROVIDER_DEFAULT_API = "openai-responses";
+export const PROVIDER_DEFAULT_API = "openai-completions";
 
 /**
  * Infer OpenClaw native `api` for a model id.

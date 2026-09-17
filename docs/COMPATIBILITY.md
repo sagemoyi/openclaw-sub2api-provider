@@ -1,7 +1,7 @@
 # Compatibility — openclaw-sub2api-provider
 
 > 维护：礼部。相对 CPA 差异、bundled metadata 去留、已知限制。  
-> **状态：按模型选协议文档已定稿（2026-09-17）。** A–H 脱敏曾过刑部；本段定稿后请刑部复审再 push。钉 OpenClaw 2026.9.3。  
+> **状态：修订（2026-09-17）。** provider 默认改为 `openai-completions`（与宿主对齐）。本地文档，脱敏过闸前禁 push。钉 OpenClaw 2026.9.3。  
 > 依据：兵部 A–H 矩阵与协议矩阵（隔离工作区，不入库）。实现：`bingbu/per-model-api`。  
 > 真实基址与密钥一律占位，禁止入文。
 
@@ -28,22 +28,22 @@
 实测环境：OpenClaw `2026.9.3` · Node `v24.19.0` · 隔离前缀 `oc-sub2api-2026.9.3`。
 
 
-## 1a. 按模型选择协议（钉 OpenClaw 2026.9.3）— 已定稿
+## 1a. 按模型选择协议（钉 OpenClaw 2026.9.3）
 
 全文：[PROTOCOL.md](./PROTOCOL.md)。
 
-**分叉（必须）**：本插件 provider 默认 `openai-responses`；OpenClaw 在目录行也没有 `api` 时默认 `openai-completions`。写入点共用 `inferNativeApiForModelId`（`catalog.run` / `mergeExplicit` / `inferredUnknownModel`），否则未知 ID 会掉回宿主 completions。
+**默认对齐**：本插件 provider 默认改为 `openai-completions`，与 OpenClaw 在目录行也没有 `api` 时的默认一致（原 responses/completions 分叉已关闭）。写入点仍共用 `inferNativeApiForModelId`，以便按模型切到 responses / messages。
 
 | 线索 | `api` |
 | --- | --- |
 | `claude` | `anthropic-messages` |
 | `gpt` / `o1` / `o3` / `o4` / `codex` / `chatgpt` | `openai-responses` |
 | `gemini` 等稳定线索 | `openai-completions` |
-| 未知 ID | provider 默认 `openai-responses`（**非官方穷尽表**） |
+| 未知 ID | provider 默认 `openai-completions`（**非官方穷尽表**） |
 
 显式 `models[].api` 优先。第一版无前缀覆盖表。
 
-Live（目录 7 条，全为 `openai-responses`，无 claude / gpt-family / gemini）：P3/P4/P5-responses/P5-completions/P6 **PASS**；**P1/P2/P3a live 待验**；**P5-messages FAIL-UPSTREAM**（`baseUrl` 含 `/v1` 时宿主可能请求 `/v1/v1/messages` → 404）。插件只写 `api`，不改宿主 URL。
+Live（改默认前矩阵）：P3/P4/P5-responses/P5-completions/P6 **PASS**；**P1/P2/P3a live 待验**；**P5-messages FAIL-UPSTREAM**。改默认后 P4 / DISCOVER 需复测。插件只写 `api`，不改宿主 URL。
 
 ## 1. 相对 CPA 的差异（实测）
 
@@ -54,7 +54,7 @@ Live（目录 7 条，全为 `openai-responses`，无 claude / gpt-family / gemi
 | 行字段 | `id` / `owned_by` / `created` / `object` | 样例：`id`, `display_name`, `created_at`, `type`；**无** `owned_by` / 行内 `object` / 经典 `created` | **有差异** |
 | 空目录 | — | 本次线上 7 条，**未观测**空 `data[]`；代码可解析空数组；业务是否当成功 **待补测** | 待验 |
 | 鉴权 | API key | 错 key → **HTTP 401**（体 `code`/`message`，无 models/data） | 对齐常见 OpenAI 形 |
-| 协议投影 | `owned_by` → responses 启发式 | **按模型写原生 `api`**（见 §1a / PROTOCOL.md）；A–H 单次 F 曾走 completions | CPA 启发式 **不适用**；未知 ID 走默认 responses，**非穷尽表** |
+| 协议投影 | `owned_by` → responses 启发式 | **按模型写原生 `api`**（见 §1a / PROTOCOL.md）；未知 ID 走默认 **completions**（与宿主对齐） | CPA 启发式 **不适用**；**非穷尽表** |
 | thinking / reasoning | CPA 预算表 | 默认关 bundled；不把 CPA thinking 表当真源 | 保守投影 |
 | 推理传输 | 标准 openai-compatible | F：`POST /v1/chat/completions` → 200；choices=1；finish=`stop` | 不自写 SSE |
 | 可选 `/backend-api/codex/models` | — | 本次未作为必测面 | **未测 / 不默认开** |

@@ -30,12 +30,12 @@ test("P3a unit: gemini clue → openai-completions", () => {
   assert.equal(projectModel({ id: "google/gemini-flash" }).api, "openai-completions");
 });
 
-test("P4: unknown id → provider default openai-responses", () => {
-  assert.equal(PROVIDER_DEFAULT_API, "openai-responses");
-  assert.equal(inferNativeApiForModelId("kimi-k3-256k"), "openai-responses");
-  assert.equal(inferNativeApiForModelId("totally-unknown"), "openai-responses");
-  assert.equal(projectModel({ id: "mystery-router-v2" }).api, "openai-responses");
-  assert.equal(inferNativeApiForModelId("mystery", { providerDefault: "openai-completions" }), "openai-completions");
+test("P4: unknown id → provider default openai-completions", () => {
+  assert.equal(PROVIDER_DEFAULT_API, "openai-completions");
+  assert.equal(inferNativeApiForModelId("kimi-k3-256k"), "openai-completions");
+  assert.equal(inferNativeApiForModelId("totally-unknown"), "openai-completions");
+  assert.equal(projectModel({ id: "mystery-router-v2" }).api, "openai-completions");
+  assert.equal(inferNativeApiForModelId("mystery", { providerDefault: "openai-responses" }), "openai-responses");
 });
 
 test("catalog.run publishes per-model api and provider default", async () => {
@@ -55,10 +55,10 @@ test("catalog.run publishes per-model api and provider default", async () => {
         ],
   });
   const published = await cpa.provider.catalog.run({ config: cfg });
-  assert.equal(published.provider.api, "openai-responses");
+  assert.equal(published.provider.api, "openai-completions");
   const byId = Object.fromEntries(published.provider.models.map((m) => [m.id, m.api]));
   assert.equal(byId["claude-sonnet-4"], "anthropic-messages");
   assert.equal(byId["gpt-5.6"], "openai-responses");
   assert.equal(byId["gemini-2.5"], "openai-completions");
-  assert.equal(byId["mystery-x"], "openai-responses");
+  assert.equal(byId["mystery-x"], "openai-completions");
 });

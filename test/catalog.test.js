@@ -14,7 +14,7 @@ test("endpoint normalization preserves reverse proxy prefixes and rejects creden
 test("rich metadata uses default context, not maximum possible context, and keeps literal aliases", () => {
   const m = projectModel(basic("team/custom", "openai"), rich("team/custom"));
   assert.equal(m.id, "team/custom"); assert.equal(m.contextWindow, 64000); assert.equal(m.maxTokens, 12000);
-  assert.equal(m.params.sub2api.maxContextWindow, 128000); assert.equal(m.api, "openai-responses");
+  assert.equal(m.params.sub2api.maxContextWindow, 128000); assert.equal(m.api, "openai-completions");
   assert.deepEqual(m.compat.supportedReasoningEfforts, ["low", "high"]);
 });
 test("empty effort list is authoritative; unknown models get conservative defaults", () => {
