@@ -139,6 +139,21 @@ npm test
 
 宿主集成套件（`npm run test:host`、`npm run test:gateway`）与 `npm run test:live` 保持显式选择，**不**进 CI：它们需要已安装的 OpenClaw peer、回环监听，live 还需要带额度的真实端点。
 
+## 发布
+
+插件从 `main` 分支经 [ClawHub CLI](https://docs.openclaw.ai/clawhub/publishing) 发布：
+
+```bash
+clawhub package validate .
+clawhub package publish . --dry-run   # 预览 owner、包名、版本、文件；不上传
+clawhub package publish . --wait     # 正式发布；等待自动化安全检查
+```
+
+认证用 `clawhub login` 或 `CLAWHUB_TOKEN` 环境变量。scoped 包名 `@sagemoyi/openclaw-sub2api-provider` 必须与发布 owner 一致；CLI 会从 checkout 自动记录源仓库与精确 commit。每次发布前先 bump `package.json`（并同步两个 README 的 tarball 文件名）；注册表不接受重复版本。新发布会先过自动化安全检查，再出现在公开安装面。
+
+发布产物是 `npm pack` 的 tarball（`files` 白名单）；`.github/`、测试与 `patches/` 不在其中。可选 `assets/icon.png`（有效 PNG，≤512 KiB）提供目录图标。
+
+
 ## 提交前检查
 
 ```bash

@@ -137,6 +137,21 @@ Do not treat every bundled model as available or add unverified alias mappings.
 
 The host integration suites (`npm run test:host`, `npm run test:gateway`) and `npm run test:live` stay opt-in and are deliberately **not** part of CI: they need an installed OpenClaw peer, loopback listeners, and — for live — a real endpoint with quota.
 
+## Publishing
+
+The plugin is published to ClawHub from the `main` branch with the [ClawHub CLI](https://docs.openclaw.ai/clawhub/publishing):
+
+```bash
+clawhub package validate .
+clawhub package publish . --dry-run   # preview owner, name, version, files; uploads nothing
+clawhub package publish . --wait     # real publish; waits for the automated security checks
+```
+
+Authenticate with `clawhub login` or the `CLAWHUB_TOKEN` environment variable. The scoped package name `@sagemoyi/openclaw-sub2api-provider` must match the publish owner, and the CLI records the source repository and exact commit from the checkout. Bump `package.json` (and the tarball name in both READMEs) before every release; the registry does not accept the same version twice. New releases pass automated security checks before they appear on public install surfaces.
+
+The published artifact is the `npm pack` tarball (the `files` whitelist); `.github/`, tests, and `patches/` are not part of it. An optional `assets/icon.png` (valid PNG, at most 512 KiB) adds catalog artwork.
+
+
 ## Before submitting changes
 
 ```bash
