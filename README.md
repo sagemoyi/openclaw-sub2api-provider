@@ -22,7 +22,38 @@ Placeholders only in this README: endpoint `https://s2a.example.com/v1` or `http
 - OpenClaw 2026.7.1-2 or later.
 - A reachable sub2api HTTP(S) endpoint and a model-access API key. No management / admin JWT is required.
 
-See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) for CPA deltas, bundled-metadata policy, and the A–H matrix.
+See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) for CPA deltas, bundled-metadata policy, and the A–H matrix. Protocol-by-model: [docs/PROTOCOL.md](docs/PROTOCOL.md).
+
+## Select transport by model
+
+The host uses OpenClaw native `api`. This plugin only writes catalog fields; it does not ship its own SSE client.
+
+| `api` | Path |
+| --- | --- |
+| `openai-completions` | `/v1/chat/completions` |
+| `openai-responses` | `/v1/responses` |
+| `anthropic-messages` | `/v1/messages` |
+
+Inference (case-insensitive; explicit `models[].api` wins): `claude` → messages; `gpt` / `o1` / `o3` / `o4` / `codex` / `chatgpt` → responses; `gemini` clues → completions; **unknown IDs use the provider default `openai-responses` (not an official exhaustive table)**.
+
+**Fork:** this provider defaults to `openai-responses`; OpenClaw defaults to `openai-completions` when a model has no `api`. Catalog rows must carry `api` or unknown IDs fall through to the host default. Locked to **OpenClaw 2026.9.3**.
+
+Override:
+
+```json5
+{
+  models: {
+    providers: {
+      "sub2api-provider": {
+        models: [{ id: "some-odd-id", api: "openai-completions" }]
+      }
+    }
+  }
+}
+```
+
+Full text: [docs/PROTOCOL.md](docs/PROTOCOL.md).
+
 
 ## Install
 

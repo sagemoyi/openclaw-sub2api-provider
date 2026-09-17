@@ -1,7 +1,7 @@
 # Compatibility — openclaw-sub2api-provider
 
 > 维护：礼部。相对 CPA 差异、bundled metadata 去留、已知限制。  
-> **状态：刑部已通过（2026-09-17）。仓根 README 已换脱敏版；push 由工部推私有仓。**  
+> **状态：刑部已通过 A–H 脱敏（2026-09-17）。按模型选协议：分叉已起草，映射表候兵部实现后定稿。钉 OpenClaw 2026.9.3。**  
 > 依据：兵部本地矩阵 `BINGBU-matrix-AH.md`（隔离工作区，不入库）。  
 > 真实基址与密钥一律占位，禁止入文。
 
@@ -27,6 +27,22 @@
 
 实测环境：OpenClaw `2026.9.3` · Node `v24.19.0` · 隔离前缀 `oc-sub2api-2026.9.3`。
 
+
+## 1a. 按模型选择协议（钉 OpenClaw 2026.9.3）
+
+全文：[PROTOCOL.md](./PROTOCOL.md)。
+
+**分叉（必须）**：本插件 provider 默认 `openai-responses`；OpenClaw 在目录行也没有 `api` 时默认 `openai-completions`。目录发布 / `resolveDynamicModel` / `prepareDynamicModel` 须同一推断写 `api`，否则未知 ID 会掉回宿主 completions。
+
+| 线索 | `api` |
+| --- | --- |
+| `claude` | `anthropic-messages` |
+| `gpt` / `o1` / `o3` / `o4` / `codex` / `chatgpt` | `openai-responses` |
+| `gemini` 等稳定线索 | `openai-completions` |
+| 未知 ID | provider 默认 `openai-responses`（**非官方穷尽表**） |
+
+显式 `models[].api` 优先，推断不覆盖。三协议：`openai-completions` → `/v1/chat/completions`；`openai-responses` → `/v1/responses`；`anthropic-messages` → `/v1/messages`。
+
 ## 1. 相对 CPA 的差异（实测）
 
 | 面 | CPA 习惯 | sub2api 实测 | 结论 |
@@ -36,7 +52,7 @@
 | 行字段 | `id` / `owned_by` / `created` / `object` | 样例：`id`, `display_name`, `created_at`, `type`；**无** `owned_by` / 行内 `object` / 经典 `created` | **有差异** |
 | 空目录 | — | 本次线上 7 条，**未观测**空 `data[]`；代码可解析空数组；业务是否当成功 **待补测** | 待验 |
 | 鉴权 | API key | 错 key → **HTTP 401**（体 `code`/`message`，无 models/data） | 对齐常见 OpenAI 形 |
-| 协议投影 | `owned_by` → responses 启发式 | **不能**靠 ownership；当前投影偏 `openai-completions`（与 F 的 `POST /v1/chat/completions` 200 一致） | 显式 `api`；responses 启发式 **不适用** |
+| 协议投影 | `owned_by` → responses 启发式 | **按模型写原生 `api`**（见 §1a / PROTOCOL.md）；A–H 单次 F 曾走 completions | CPA 启发式 **不适用**；未知 ID 走默认 responses，**非穷尽表** |
 | thinking / reasoning | CPA 预算表 | 默认关 bundled；不把 CPA thinking 表当真源 | 保守投影 |
 | 推理传输 | 标准 openai-compatible | F：`POST /v1/chat/completions` → 200；choices=1；finish=`stop` | 不自写 SSE |
 | 可选 `/backend-api/codex/models` | — | 本次未作为必测面 | **未测 / 不默认开** |

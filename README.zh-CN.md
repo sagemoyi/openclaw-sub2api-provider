@@ -22,7 +22,38 @@ OpenClaw 外置插件：从 [Wei-Shaw/sub2api](https://github.com/Wei-Shaw/sub2a
 - OpenClaw 2026.7.1-2 或更高。
 - 可访问的 sub2api HTTP(S) 端点与模型访问 key。不需要管理后台 / admin JWT。
 
-差异、bundled 去留与测项见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)。
+差异、bundled 去留与测项见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)。按模型选协议见 [docs/PROTOCOL.md](docs/PROTOCOL.md)。
+
+## 按模型选择协议
+
+宿主走 OpenClaw 原生 `api`，插件只写目录字段，不自写传输。
+
+| `api` | 路径 |
+| --- | --- |
+| `openai-completions` | `/v1/chat/completions` |
+| `openai-responses` | `/v1/responses` |
+| `anthropic-messages` | `/v1/messages` |
+
+推断（大小写不敏感；显式 `models[].api` 优先）：`claude` → messages；`gpt` / `o1` / `o3` / `o4` / `codex` / `chatgpt` → responses；`gemini` 线索 → completions；**未知 ID 走默认 `openai-responses`（不是官方穷尽表）**。
+
+**分叉**：本插件 provider 默认是 `openai-responses`；OpenClaw 在没有 `api` 时默认 `openai-completions`。目录必须写出 `api`，否则未知 ID 会掉回宿主 completions。钉 **OpenClaw 2026.9.3**。
+
+覆盖示例：
+
+```json5
+{
+  models: {
+    providers: {
+      "sub2api-provider": {
+        models: [{ id: "some-odd-id", api: "openai-completions" }]
+      }
+    }
+  }
+}
+```
+
+全文：[docs/PROTOCOL.md](docs/PROTOCOL.md)。
+
 
 ## 安装
 
