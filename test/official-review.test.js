@@ -66,12 +66,21 @@ test("rich-endpoint auth failure invalidates cached data even when plain endpoin
   }
 });
 
-test("publication detects retained removals including an empty new catalog, but permits explicit user rows", async () => {
+test("publication reports retained removals (including an empty new catalog) without failing, and permits explicit user rows", async () => {
+  // Host retention of session-referenced rows is documented behavior, not a sync failure:
+  // the sync must succeed and report the leftovers (throwing here used to brick the CLI).
   const runtime = { loadModelCatalog: async () => [{ provider: "sub2api-provider", id: "a" }, { provider: "sub2api-provider", id: "removed" }] };
-  await assert.rejects(materializeCatalog({}, snapshot, runtime), /retained removed/);
-  await assert.rejects(materializeCatalog({}, { ...snapshot, models: [] }, runtime), /retained removed/);
+  const shrunk = await materializeCatalog({}, snapshot, runtime);
+  assert.equal(shrunk.synced, true);
+  assert.deepEqual(shrunk.retained, ["removed"]);
+  assert.match(shrunk.warning, /removed/);
+  const emptied = await materializeCatalog({}, { ...snapshot, models: [] }, runtime);
+  assert.equal(emptied.synced, true);
+  assert.deepEqual([...emptied.retained].sort(), ["a", "removed"]);
   const config = { models: { providers: { "sub2api-provider": { models: [{ id: "removed" }] } } } };
-  assert.equal((await materializeCatalog(config, snapshot, runtime)).synced, true);
+  const explicit = await materializeCatalog(config, snapshot, runtime);
+  assert.equal(explicit.synced, true);
+  assert.equal(explicit.retained, undefined);
 });
 
 test("sync fingerprints endpoint, config and agent scope, not only model rows", async () => {

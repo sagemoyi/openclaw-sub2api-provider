@@ -1,6 +1,6 @@
 # OpenClaw 2026.8.1 / 2026.8.2 worker reference backport
 
-These are optional patches to the **OpenClaw host**, not code loaded or applied by the sub2api provider plugin. They target only the exact npm releases named in each patch. The published plugin 0.1.4 does not install them or change its host.
+These are optional patches to the **OpenClaw host**, not code loaded or applied by the sub2api provider plugin. They target only the exact npm releases named in each patch. The published plugin 0.1.5 does not install them or change its host.
 
 ## Problem and change
 

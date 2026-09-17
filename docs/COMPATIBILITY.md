@@ -133,3 +133,4 @@ Live（默认 completions @ `a03a7d9`）：DISCOVER / D1 / P3 / P5-default-compl
 | 2026-09-17 | live 复测（真实端点，凭据仅注入环境）：P5-messages **PASS**（显式 `anthropic-messages` → `/v1/messages` 200；A/B 实证根因为双 `/v1` 前缀）；`client_version=1` manifest **已验**（`rich=true` 为真）；reasoning_effort 上线被服务端接受（high/xhigh）；P1/P2/P3a 仍待验（目录无对应线索 ID） |
 | 2026-09-17 | 0.1.3 发布 ClawHub（`@sagemoyi/openclaw-sub2api-provider`，安全检查已过）；仓库转 public 并收敛到 `main` 单分支；README 双语重写为发布后形态（ClawHub 安装/更新、故障排查），DEVELOPMENT/TESTING 增加发布小节 |
 | 2026-09-17 | 0.1.4：新增聊天命令 `/sub2api sync`（TUI/WebUI/渠道，`api.registerCommand`）；`refreshSeconds` 默认 60 → 86400（24h）；发布流程改为一键 GitHub Actions（trusted publishing / OIDC） |
+| 2026-09-17 | 0.1.5：修复同步在校验到宿主保留已删模型行时抛错导致整个 CLI 崩溃（`Could not start the CLI: OpenClaw retained removed sub2api models`）的问题；宿主保留被会话引用的行是文档化行为，现在同步照常成功并在结果里返回 `retained` 列表 + 警告（gateway 日志、CLI JSON、`/sub2api sync` 回复均可见），滞留行在引用释放并重启 Gateway 后自然消失 |

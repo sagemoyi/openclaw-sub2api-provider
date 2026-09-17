@@ -49,7 +49,7 @@ Alternatively, create an installable package:
 
 ```bash
 npm pack
-openclaw plugins install ./sagemoyi-openclaw-sub2api-provider-0.1.4.tgz
+openclaw plugins install ./sagemoyi-openclaw-sub2api-provider-0.1.5.tgz
 ```
 
 If you use `plugins.allow`, add `sub2api-provider` to the existing list without replacing other allowed plugins. The install may prompt `--accept-capabilities`.

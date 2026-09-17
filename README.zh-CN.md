@@ -49,7 +49,7 @@ openclaw plugins install --link .
 
 ```bash
 npm pack
-openclaw plugins install ./sagemoyi-openclaw-sub2api-provider-0.1.4.tgz
+openclaw plugins install ./sagemoyi-openclaw-sub2api-provider-0.1.5.tgz
 ```
 
 若启用 `plugins.allow`，把 `sub2api-provider` 追加进现有列表，不要替换其他已允许插件。安装可能提示 `--accept-capabilities`。

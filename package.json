@@ -1,6 +1,6 @@
 {
   "name": "@sagemoyi/openclaw-sub2api-provider",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "sub2api discovery and capability-aware provider for OpenClaw",
   "type": "module",
   "license": "MIT",

@@ -52,8 +52,13 @@ export default definePluginEntry({
     });
     const sync = createCatalogSynchronizer({
       discover: cpa.discover, config: api.config,
-      publish: async (config, snapshot, ctx) => materializeCatalog(config, snapshot,
-        await import("openclaw/plugin-sdk/agent-runtime"), ctx),
+      publish: async (config, snapshot, ctx) => {
+        const result = await materializeCatalog(config, snapshot,
+          await import("openclaw/plugin-sdk/agent-runtime"), ctx);
+        if (result.retained?.length)
+          api.logger.warn(`sub2api catalog sync: OpenClaw retained ${result.retained.length} removed model(s) still referenced by sessions: ${result.retained.join(", ")}`);
+        return result;
+      },
     });
     api.registerService(createCatalogService({ sync, intervalMs: cpa.client.ttlMs }));
     api.registerCommand(createSub2apiCommand({ sync }));

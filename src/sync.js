@@ -30,7 +30,13 @@ export async function materializeCatalog(config, snapshot, runtime, ctx = {}) {
   const published = new Set(rows.filter((r) => r.provider === PROVIDER).map((r) => r.id));
   if (snapshot.models.some((m) => !published.has(m.id))) throw new Error("OpenClaw did not publish the complete sub2api catalog; sync will retry");
   const allowed = new Set([...snapshot.models, ...(config.models?.providers?.[PROVIDER]?.models ?? [])].map((m) => m.id));
-  if ([...published].some((id) => !allowed.has(id))) throw new Error("OpenClaw retained removed sub2api models; sync will retry");
+  // The host legitimately retains removed rows while sessions still reference them
+  // (2026.9.3+ removeProviderModels semantics). That is not a sync failure: report the
+  // leftovers instead of throwing. Throwing here used to abort the whole CLI with
+  // "Could not start the CLI", and the retained rows survive every retry by design.
+  const retained = [...published].filter((id) => !allowed.has(id));
   return { synced: true, models: snapshot.models.length, revision: snapshot.revision, mode,
+    ...(retained.length ? { retained,
+      warning: `OpenClaw kept ${retained.length} removed model(s) still referenced by sessions (${retained.join(", ")}); they disappear once references are released and the Gateway restarts.` } : {}),
     ...(mode === "legacy" ? { pickerRefresh: "Existing Gateway models.list caches require a Gateway restart/config reload" } : {}) };
 }

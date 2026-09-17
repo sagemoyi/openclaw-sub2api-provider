@@ -24,7 +24,10 @@ export function createSub2apiCommand({ sync }) {
       if (!result?.synced) {
         return { text: `sub2api sync: not synced (${REASONS[result?.reason] ?? result?.reason ?? "unknown reason"}).` };
       }
-      return { text: `sub2api sync: published ${result.models} model(s) (revision ${result.revision ?? "unknown"}, mode ${result.mode}).` };
+      const kept = result.retained?.length
+        ? ` OpenClaw kept ${result.retained.length} removed model(s) still referenced by sessions (${result.retained.join(", ")}); they disappear once references are released and the Gateway restarts.`
+        : "";
+      return { text: `sub2api sync: published ${result.models} model(s) (revision ${result.revision ?? "unknown"}, mode ${result.mode}).${kept}` };
     },
   };
 }
