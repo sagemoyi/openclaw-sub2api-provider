@@ -7,6 +7,7 @@ import { createSub2apiProvider, mergeExplicit } from "./src/provider.js";
 import { PROVIDER, normalizeBaseUrl } from "./src/catalog.js";
 import { buildAuthModelAccessPatch } from "./src/auth.js";
 import { materializeCatalog } from "./src/sync.js";
+import { createSub2apiCommand } from "./src/command.js";
 import { createCatalogSynchronizer, createCatalogService } from "./src/lifecycle.js";
 
 export default definePluginEntry({
@@ -55,6 +56,7 @@ export default definePluginEntry({
         await import("openclaw/plugin-sdk/agent-runtime"), ctx),
     });
     api.registerService(createCatalogService({ sync, intervalMs: cpa.client.ttlMs }));
+    api.registerCommand(createSub2apiCommand({ sync }));
     api.registerCli(({ program, config }) => {
       const command = program.command("sub2api").description("sub2api model discovery diagnostics");
       command.command("sync").description("Refresh OpenClaw model catalog state without editing configuration")

@@ -12,7 +12,7 @@ OpenClaw 外置插件：从 [Wei-Shaw/sub2api](https://github.com/Wei-Shaw/sub2a
 | --- | --- |
 | 插件 ID / provider ID | `sub2api-provider` |
 | 包名（目标） | `@sagemoyi/openclaw-sub2api-provider` |
-| CLI | `openclaw sub2api {sync,catalog}`（无 `cpa` 别名） |
+| CLI | `openclaw sub2api {sync,catalog}`（无 `cpa` 别名）；聊天命令 `/sub2api sync`（TUI/WebUI/Telegram） |
 | 密钥环境变量 | `${SUB2API_API_KEY}` |
 | 默认示例端点 | `http://127.0.0.1:8080/v1` |
 

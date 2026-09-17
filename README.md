@@ -49,7 +49,7 @@ Alternatively, create an installable package:
 
 ```bash
 npm pack
-openclaw plugins install ./sagemoyi-openclaw-sub2api-provider-0.1.3.tgz
+openclaw plugins install ./sagemoyi-openclaw-sub2api-provider-0.1.4.tgz
 ```
 
 If you use `plugins.allow`, add `sub2api-provider` to the existing list without replacing other allowed plugins. The install may prompt `--accept-capabilities`.
@@ -172,17 +172,18 @@ Note: catalog rows whose protocol is `anthropic-messages` carry their own per-mo
 | --- | --- |
 | `openclaw sub2api catalog` | Query model capabilities, metadata sources, and diagnostics without printing credentials or the endpoint URL |
 | `openclaw sub2api sync` | Request a refresh and publish the catalog; return synchronization status without editing the main configuration |
+| `/sub2api sync` | Chat command (TUI, WebUI, Telegram, and other channels): force a catalog refresh and reply with the synchronization status |
 | `openclaw models list --all --provider sub2api-provider` | List sub2api models in the OpenClaw catalog |
 
 There is **no** `openclaw cpa` alias. Inspect command output and Gateway logs if discovery or synchronization fails. Transient failures can return a historical snapshot marked `stale`; synchronization does not publish it as a fresh catalog.
 
 ## Refresh and cache
 
-The Gateway service discovers models at startup and, by default, waits 60 seconds after each synchronization before checking again. Request-time discovery also reads or refreshes the catalog cache.
+The Gateway service discovers models at startup and, by default, waits 24 hours after each synchronization before checking again. Request-time discovery also reads or refreshes the catalog cache.
 
 | Setting | Default | Range | Description |
 | --- | --- | --- | --- |
-| `refreshSeconds` | `60` | 10–86400 | Cache TTL and background refresh interval, in seconds |
+| `refreshSeconds` | `86400` | 10–86400 | Cache TTL and background refresh interval, in seconds (default: 24 hours) |
 | `staleSeconds` | `300` | 0–86400 | Additional time after TTL during which a successful snapshot may be used temporarily |
 | `timeoutMs` | `10000` | 100–60000 | Timeout for each catalog request, in milliseconds |
 | `useBundledMetadata` | `false` | Boolean | Supplement or correct known capabilities using bundled CLIProxyAPI-derived metadata |
@@ -196,7 +197,7 @@ Configure these under the plugin entry:
       "sub2api-provider": {
         enabled: true,
         config: {
-          refreshSeconds: 60,
+          refreshSeconds: 86400,
           staleSeconds: 300,
           timeoutMs: 10000,
           useBundledMetadata: false

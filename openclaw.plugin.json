@@ -23,7 +23,7 @@
         "type": "integer",
         "minimum": 10,
         "maximum": 86400,
-        "default": 60
+        "default": 86400
       },
       "staleSeconds": {
         "type": "integer",

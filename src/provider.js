@@ -96,7 +96,7 @@ export function inferredUnknownModel(modelId, config) {
 
 export function createSub2apiProvider({ fetchRows, resolveAuth, config = {}, logger = { warn() {} }, now, replayHooks = {}, isApiKeyMarker }) {
   const settings = config.plugins?.entries?.[PROVIDER]?.config ?? {};
-  const client = new CatalogClient({ fetchRows, now, ttlMs: (settings.refreshSeconds ?? 60) * 1000,
+  const client = new CatalogClient({ fetchRows, now, ttlMs: (settings.refreshSeconds ?? 86400) * 1000,
     staleMs: (settings.staleSeconds ?? 300) * 1000, timeoutMs: settings.timeoutMs ?? 10000,
     useBundledMetadata: settings.useBundledMetadata ?? false, warn: (m) => logger.warn(m) });
   const bindings = new Map();

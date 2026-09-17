@@ -132,3 +132,4 @@ Live（默认 completions @ `a03a7d9`）：DISCOVER / D1 / P3 / P5-default-compl
 | 2026-09-17 | 0.1.3 审查修复：anthropic-messages 行 baseUrl 去 `/v1`（`stripV1Suffix`，live 复测待验）、rich 探测改非空 `client_version=1`（manifest live 待验）、o 系列改 token 边界、宿主默认 api 表述更正、新增宿主版本矩阵 |
 | 2026-09-17 | live 复测（真实端点，凭据仅注入环境）：P5-messages **PASS**（显式 `anthropic-messages` → `/v1/messages` 200；A/B 实证根因为双 `/v1` 前缀）；`client_version=1` manifest **已验**（`rich=true` 为真）；reasoning_effort 上线被服务端接受（high/xhigh）；P1/P2/P3a 仍待验（目录无对应线索 ID） |
 | 2026-09-17 | 0.1.3 发布 ClawHub（`@sagemoyi/openclaw-sub2api-provider`，安全检查已过）；仓库转 public 并收敛到 `main` 单分支；README 双语重写为发布后形态（ClawHub 安装/更新、故障排查），DEVELOPMENT/TESTING 增加发布小节 |
+| 2026-09-17 | 0.1.4：新增聊天命令 `/sub2api sync`（TUI/WebUI/渠道，`api.registerCommand`）；`refreshSeconds` 默认 60 → 86400（24h）；发布流程改为一键 GitHub Actions（trusted publishing / OIDC） |

@@ -72,3 +72,11 @@ test("resolve/prepare apply shared inference for unknown ids", async () => {
   assert.equal(cpa.provider.resolveDynamicModel({ config: cfg, modelId: "totally-unknown-xyz" }).api, "openai-completions");
   assert.equal((await cpa.provider.prepareDynamicModel({ config: cfg, modelId: "gemini-flash" })).api, "openai-completions");
 });
+
+test("default refresh interval is 24h and refreshSeconds overrides it", () => {
+  const defaults = createSub2apiProvider({ fetchRows: async () => [], resolveAuth: async () => null });
+  assert.equal(defaults.client.ttlMs, 86400 * 1000);
+  const custom = createSub2apiProvider({ fetchRows: async () => [], resolveAuth: async () => null,
+    config: { plugins: { entries: { "sub2api-provider": { config: { refreshSeconds: 600 } } } } } });
+  assert.equal(custom.client.ttlMs, 600 * 1000);
+});

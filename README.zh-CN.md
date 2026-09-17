@@ -49,7 +49,7 @@ openclaw plugins install --link .
 
 ```bash
 npm pack
-openclaw plugins install ./sagemoyi-openclaw-sub2api-provider-0.1.3.tgz
+openclaw plugins install ./sagemoyi-openclaw-sub2api-provider-0.1.4.tgz
 ```
 
 若启用 `plugins.allow`，把 `sub2api-provider` 追加进现有列表，不要替换其他已允许插件。安装可能提示 `--accept-capabilities`。
@@ -172,17 +172,18 @@ openclaw gateway restart
 | --- | --- |
 | `openclaw sub2api catalog` | 查询模型能力、元数据来源与诊断，不打印凭据和端点 URL |
 | `openclaw sub2api sync` | 请求刷新并发布目录；返回同步状态，不修改主配置 |
+| `/sub2api sync` | 聊天命令（TUI、WebUI、Telegram 等渠道）：强制刷新目录并回复同步状态 |
 | `openclaw models list --all --provider sub2api-provider` | 列出 OpenClaw 目录中的 sub2api 模型 |
 
 **没有** `openclaw cpa` 别名。发现或同步失败时检查命令输出与 Gateway 日志。瞬时故障可能返回标记为 `stale` 的历史快照；同步不会把它当作新目录发布。
 
 ## 刷新与缓存
 
-Gateway 服务启动时发现模型，默认在每次同步后等待 60 秒再检查。请求时的发现也会读取或刷新目录缓存。
+Gateway 服务启动时发现模型，默认在每次同步后等待 24 小时再检查。请求时的发现也会读取或刷新目录缓存。
 
 | 设置 | 默认 | 范围 | 说明 |
 | --- | --- | --- | --- |
-| `refreshSeconds` | `60` | 10–86400 | 缓存 TTL 与后台刷新间隔（秒） |
+| `refreshSeconds` | `86400` | 10–86400 | 缓存 TTL 与后台刷新间隔（秒，默认 24 小时） |
 | `staleSeconds` | `300` | 0–86400 | TTL 之后允许临时使用成功快照的额外时长 |
 | `timeoutMs` | `10000` | 100–60000 | 每次目录请求的超时（毫秒） |
 | `useBundledMetadata` | `false` | 布尔 | 用随包的 CLIProxyAPI 衍生元数据补充或修正已知能力 |
@@ -196,7 +197,7 @@ Gateway 服务启动时发现模型，默认在每次同步后等待 60 秒再�
       "sub2api-provider": {
         enabled: true,
         config: {
-          refreshSeconds: 60,
+          refreshSeconds: 86400,
           staleSeconds: 300,
           timeoutMs: 10000,
           useBundledMetadata: false
